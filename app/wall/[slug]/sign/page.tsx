@@ -5,10 +5,33 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { SignaturePad } from "@/components/signature-pad";
 import { Id } from "@/convex/_generated/dataModel";
 
 const STICKER_OPTIONS = ["❤️", "🎉", "🙏", "✨", "💐", "🥳", "💝", "🌟"];
+
+// Component to display cover image
+function CoverImage({ storageId }: { storageId: Id<"_storage"> }) {
+  const url = useQuery(api.walls.getCoverImageUrl, { storageId });
+
+  if (!url) {
+    return <div className="w-full h-32 sm:h-48 bg-zinc-800 animate-pulse" />;
+  }
+
+  return (
+    <div className="relative w-full h-32 sm:h-48">
+      <Image
+        src={url}
+        alt="Wall cover"
+        fill
+        className="object-cover"
+        priority
+        unoptimized
+      />
+    </div>
+  );
+}
 
 export default function SignWallPage() {
   const params = useParams();
@@ -151,6 +174,9 @@ export default function SignWallPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor, fontFamily }}>
+      {/* Cover Image */}
+      {wall.coverImageId && <CoverImage storageId={wall.coverImageId} />}
+
       {/* Header */}
       <header style={{ borderBottomColor: borderColor, borderBottomWidth: 1 }}>
         <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6">

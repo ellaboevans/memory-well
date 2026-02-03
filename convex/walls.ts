@@ -199,6 +199,7 @@ export const update = mutation({
     wallId: v.id("walls"),
     title: v.optional(v.string()),
     description: v.optional(v.string()),
+    coverImageId: v.optional(v.union(v.id("_storage"), v.null())),
     theme: v.optional(themeValidator),
     visibility: v.optional(v.union(v.literal("private"), v.literal("public"))),
     acceptingEntries: v.optional(v.boolean()),
@@ -229,9 +230,12 @@ export const update = mutation({
 
     const { wallId, ...updates } = args;
 
-    // Filter out undefined values
+    // Filter out undefined values but keep null (for explicitly clearing fields like coverImageId)
+    // Convert null to undefined since the schema uses v.optional() which expects undefined, not null
     const cleanUpdates = Object.fromEntries(
-      Object.entries(updates).filter(([, value]) => value !== undefined),
+      Object.entries(updates)
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => [key, value ?? undefined]),
     );
 
     if (Object.keys(cleanUpdates).length > 0) {
@@ -284,5 +288,33 @@ export const remove = mutation({
 
     await ctx.db.delete(args.wallId);
     return null;
+  },
+});
+/**
+ * Generate an upload URL for cover images
+ */
+export const generateUploadUrl = mutation({
+  args: {},
+  returns: v.string(),
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "Not authenticated",
+      });
+    }
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+/**
+ * Get cover image URL from storage ID
+ */
+export const getCoverImageUrl = query({
+  args: { storageId: v.id("_storage") },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.storageId);
   },
 });

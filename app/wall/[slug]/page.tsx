@@ -29,6 +29,28 @@ function SignatureImage({ storageId }: { storageId: Id<"_storage"> }) {
   );
 }
 
+// Component to display cover image
+function CoverImage({ storageId }: { storageId: Id<"_storage"> }) {
+  const url = useQuery(api.walls.getCoverImageUrl, { storageId });
+
+  if (!url) {
+    return <div className="w-full h-48 sm:h-64 bg-zinc-800 animate-pulse" />;
+  }
+
+  return (
+    <div className="relative w-full h-48 sm:h-64">
+      <Image
+        src={url}
+        alt="Wall cover"
+        fill
+        className="object-cover"
+        priority
+        unoptimized
+      />
+    </div>
+  );
+}
+
 export default function PublicWallPage() {
   const params = useParams();
   const slug = params.slug as string;
@@ -83,6 +105,9 @@ export default function PublicWallPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor, fontFamily }}>
+      {/* Cover Image */}
+      {wall.coverImageId && <CoverImage storageId={wall.coverImageId} />}
+
       {/* Wall header */}
       <header style={{ borderBottomColor: borderColor, borderBottomWidth: 1 }}>
         <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { getDomainSuffix } from "@/lib/config";
 import { useParams, useRouter } from "next/navigation";
 import { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
+import Image from "next/image";
 
 const FONT_OPTIONS = [
   { value: "Geist", label: "Geist (Default)" },
@@ -29,9 +30,17 @@ export default function EditWallPage() {
   const params = useParams();
   const router = useRouter();
   const wallId = params.wallId as Id<"walls">;
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const wall = useQuery(api.walls.get, { wallId });
   const updateWall = useMutation(api.walls.update);
+  const generateUploadUrl = useMutation(api.walls.generateUploadUrl);
+
+  // Get cover image URL if exists
+  const coverImageUrl = useQuery(
+    api.walls.getCoverImageUrl,
+    wall?.coverImageId ? { storageId: wall.coverImageId } : "skip",
+  );
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -42,6 +51,12 @@ export default function EditWallPage() {
   const [primaryColor, setPrimaryColor] = useState("#ffffff");
   const [backgroundColor, setBackgroundColor] = useState("#0a0a0a");
   const [fontFamily, setFontFamily] = useState("Geist");
+
+  // Cover image state
+  const [coverImageId, setCoverImageId] = useState<Id<"_storage"> | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [coverRemoved, setCoverRemoved] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,6 +72,7 @@ export default function EditWallPage() {
       setPrimaryColor(wall.theme.primaryColor);
       setBackgroundColor(wall.theme.backgroundColor);
       setFontFamily(wall.theme.fontFamily);
+      setCoverImageId(wall.coverImageId ?? null);
     }
   }, [wall]);
 
@@ -70,7 +86,8 @@ export default function EditWallPage() {
         acceptingEntries !== wall.acceptingEntries ||
         primaryColor !== wall.theme.primaryColor ||
         backgroundColor !== wall.theme.backgroundColor ||
-        fontFamily !== wall.theme.fontFamily;
+        fontFamily !== wall.theme.fontFamily ||
+        coverImageId !== (wall.coverImageId ?? null);
       setHasChanges(changed);
     }
   }, [
@@ -82,7 +99,63 @@ export default function EditWallPage() {
     primaryColor,
     backgroundColor,
     fontFamily,
+    coverImageId,
   ]);
+
+  // Handle cover image upload
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be less than 5MB");
+      return;
+    }
+
+    setIsUploadingCover(true);
+    setError(null);
+
+    try {
+      // Show preview immediately
+      const previewUrl = URL.createObjectURL(file);
+      setCoverPreview(previewUrl);
+
+      // Upload to Convex
+      const uploadUrl = await generateUploadUrl();
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const { storageId } = await response.json();
+      setCoverImageId(storageId);
+      setCoverRemoved(false);
+    } catch (err) {
+      setError("Failed to upload image");
+      setCoverPreview(null);
+    } finally {
+      setIsUploadingCover(false);
+    }
+  };
+
+  const removeCover = () => {
+    setCoverImageId(null);
+    setCoverPreview(null);
+    setCoverRemoved(true);
+    if (coverInputRef.current) {
+      coverInputRef.current.value = "";
+    }
+  };
 
   if (wall === undefined) {
     return (
@@ -124,6 +197,7 @@ export default function EditWallPage() {
         wallId,
         title: title.trim(),
         description: description.trim() || undefined,
+        coverImageId: coverRemoved ? null : (coverImageId ?? undefined),
         visibility,
         acceptingEntries,
         theme: {
@@ -218,6 +292,73 @@ export default function EditWallPage() {
               onChange={(e) => setDescription(e.target.value)}
               className="mt-1 block w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white placeholder-zinc-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white resize-none"
             />
+          </div>
+
+          {/* Cover Image */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2">
+              Cover Image <span className="text-zinc-500">(optional)</span>
+            </label>
+
+            {/* Current/Preview Image */}
+            {(coverPreview || (coverImageUrl && !coverRemoved)) && (
+              <div className="relative mb-3 rounded-lg overflow-hidden">
+                <Image
+                  src={coverPreview || coverImageUrl || ""}
+                  alt="Cover preview"
+                  width={600}
+                  height={200}
+                  className="w-full h-40 object-cover"
+                  unoptimized
+                />
+                <button
+                  type="button"
+                  onClick={removeCover}
+                  className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black/80 rounded-full text-white transition-colors"
+                  title="Remove cover">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+                {isUploadingCover && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="animate-spin h-8 w-8 border-2 border-white border-t-transparent rounded-full" />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Upload Button */}
+            <div className="flex items-center gap-3">
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCoverUpload}
+                className="hidden"
+                id="cover-upload"
+              />
+              <label
+                htmlFor="cover-upload"
+                className={`inline-flex items-center px-4 py-2 border border-zinc-700 rounded-md text-sm font-medium text-white hover:bg-zinc-800 cursor-pointer transition-colors ${
+                  isUploadingCover ? "opacity-50 cursor-wait" : ""
+                }`}>
+                {coverPreview || (coverImageUrl && !coverRemoved)
+                  ? "Change Image"
+                  : "Upload Image"}
+              </label>
+              <span className="text-xs text-zinc-500">
+                Recommended: 1200×400px, max 5MB
+              </span>
+            </div>
           </div>
 
           {/* Theme Section */}
