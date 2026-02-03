@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { getDomainSuffix } from "@/lib/config";
 import { useParams, useRouter } from "next/navigation";
 import { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
@@ -145,7 +146,7 @@ export default function EditWallPage() {
             </label>
             <div className="mt-1 flex rounded-md">
               <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-zinc-700 bg-zinc-900 text-zinc-500 text-sm">
-                memorywell.app/
+                {getDomainSuffix()}
               </span>
               <input
                 type="text"

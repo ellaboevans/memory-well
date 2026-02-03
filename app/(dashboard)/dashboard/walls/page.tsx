@@ -2,6 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { getWallUrl, getWallDisplayUrl } from "@/lib/config";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CreateWallDialog } from "@/components/dashboard/create-wall-dialog";
@@ -79,11 +80,11 @@ export default function WallsListPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <a
-                    href={`https://${wall.slug}.memorywell.app`}
+                    href={getWallUrl(wall.slug)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-zinc-400 hover:text-white">
-                    {wall.slug}.memorywell.app ↗
+                    {getWallDisplayUrl(wall.slug)} ↗
                   </a>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

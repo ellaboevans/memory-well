@@ -1,18 +1,27 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useState } from "react";
+import { useConvexAuth } from "convex/react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function SignInPage() {
   const { signIn } = useAuthActions();
+  const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +34,7 @@ export default function SignInPage() {
         password,
         flow: "signIn",
       });
-      router.push("/dashboard");
+      // Don't navigate here - the useEffect will handle it when isAuthenticated becomes true
     } catch (err) {
       // Handle specific Convex Auth errors
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -43,7 +52,6 @@ export default function SignInPage() {
       } else {
         setError("Invalid email or password. Please try again.");
       }
-    } finally {
       setIsLoading(false);
     }
   };

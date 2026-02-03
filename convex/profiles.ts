@@ -30,16 +30,52 @@ export const me = query({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .unique();
 
-    if (!profile) return null;
-
-    // Get email from users table
+    // Get user data
     const user = await ctx.db.get(userId);
+
+    if (!profile) {
+      // Return a placeholder - the ensureProfile mutation will create it
+      return null;
+    }
 
     return {
       ...profile,
       displayName: profile.name,
       email: user?.email,
     };
+  },
+});
+
+/**
+ * Ensure the current user has a profile (create if missing)
+ */
+export const ensureProfile = mutation({
+  args: {},
+  returns: v.id("profiles"),
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const existing = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .unique();
+
+    if (existing) {
+      return existing._id;
+    }
+
+    // Get user data for name
+    const user = await ctx.db.get(userId);
+
+    return await ctx.db.insert("profiles", {
+      userId,
+      name: user?.name ?? undefined,
+      tier: "free",
+      createdAt: Date.now(),
+    });
   },
 });
 

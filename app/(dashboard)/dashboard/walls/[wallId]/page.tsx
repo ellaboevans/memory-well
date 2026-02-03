@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { getWallDisplayUrl } from "@/lib/config";
 import { useParams, useRouter } from "next/navigation";
 import { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
@@ -72,7 +73,7 @@ export default function WallDetailPage() {
       : "bg-red-900/50 text-red-400";
   };
 
-  const wallUrl = `${wall.slug}.memorywell.app`;
+  const wallUrl = getWallDisplayUrl(wall.slug);
 
   const renderEntries = () => {
     if (entries === undefined) {

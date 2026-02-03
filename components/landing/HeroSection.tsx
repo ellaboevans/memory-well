@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { APP_DOMAIN } from "@/lib/config";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 export function HeroSection() {
@@ -100,7 +101,7 @@ export function HeroSection() {
                   </div>
                   <div className="flex-1 flex justify-center">
                     <div className="px-4 py-1 rounded-md bg-white/5 text-xs text-muted-foreground">
-                      memorywell.app/w/sarah-james-wedding
+                      {APP_DOMAIN}/wall/evans-elabo-wedding
                     </div>
                   </div>
                 </div>

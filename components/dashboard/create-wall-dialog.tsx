@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { getDomainSuffix } from "@/lib/config";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -72,7 +73,7 @@ export function CreateWallDialog({ children }: CreateWallDialogProps) {
     setSlug(slugify(value));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -203,7 +204,7 @@ export function CreateWallDialog({ children }: CreateWallDialogProps) {
               </Label>
               <div className="flex rounded-md">
                 <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-zinc-700 bg-zinc-800 text-zinc-500 text-sm">
-                  memorywell.app/
+                  {getDomainSuffix()}
                 </span>
                 <Input
                   id="create-slug"

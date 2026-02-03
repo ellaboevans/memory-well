@@ -2,6 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { getWallDisplayUrl } from "@/lib/config";
 import Link from "next/link";
 import {
   Card,
@@ -88,7 +89,7 @@ export default function DashboardPage() {
                 </div>
                 <CardDescription className="flex items-center gap-1 text-zinc-500">
                   <ExternalLink className="h-3 w-3" />
-                  {wall.slug}.memorywell.app
+                  {getWallDisplayUrl(wall.slug)}
                 </CardDescription>
               </CardHeader>
               <CardContent>
