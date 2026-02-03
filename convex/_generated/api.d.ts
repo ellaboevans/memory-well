@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as entries from "../entries.js";
 import type * as http from "../http.js";
 import type * as profiles from "../profiles.js";
+import type * as subscriptions from "../subscriptions.js";
 import type * as walls from "../walls.js";
 
 import type {
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   entries: typeof entries;
   http: typeof http;
   profiles: typeof profiles;
+  subscriptions: typeof subscriptions;
   walls: typeof walls;
 }>;
 

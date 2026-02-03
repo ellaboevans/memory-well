@@ -49,11 +49,11 @@ const applicationTables = {
     .index("by_wall", ["wallId"])
     .index("by_wall_created", ["wallId", "createdAt"]),
 
-  // Subscriptions for billing
+  // Purchases for billing (Polar.sh - one-time payment)
   subscriptions: defineTable({
     userId: v.id("users"),
-    paystackCustomerId: v.string(),
-    paystackSubscriptionId: v.optional(v.string()),
+    polarCustomerId: v.string(),
+    polarOrderId: v.optional(v.string()),
     status: v.union(
       v.literal("active"),
       v.literal("cancelled"),
@@ -62,7 +62,9 @@ const applicationTables = {
     ),
     currentPeriodEnd: v.optional(v.number()),
     createdAt: v.number(),
-  }).index("by_user", ["userId"]),
+  })
+    .index("by_user", ["userId"])
+    .index("by_polar_customer", ["polarCustomerId"]),
 };
 
 export default defineSchema({
