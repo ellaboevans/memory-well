@@ -112,7 +112,91 @@ sign-dria/
 
 ---
 
-## 5. Scalability Considerations
+## 5. Subdomain-Based Multi-Tenancy
+
+### Routing Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SUBDOMAIN ROUTING                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  memorywell.app                 → Marketing/Landing             │
+│  www.memorywell.app             → Marketing/Landing             │
+│  app.memorywell.app             → Dashboard (authenticated)     │
+│  {slug}.memorywell.app          → Public wall view              │
+│  {slug}.memorywell.app/sign     → Wall signing form             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Implementation
+
+**File: `proxy.ts`** (Next.js 16+ uses `proxy.ts` instead of `middleware.ts`)
+
+```typescript
+// Routing logic:
+// 1. Extract subdomain from hostname
+// 2. If "app" subdomain → rewrite to /dashboard routes
+// 3. If other non-reserved subdomain → rewrite to /wall/{slug}
+// 4. No subdomain or "www" → serve marketing pages
+```
+
+**Reserved Subdomains:**
+- `app` - Dashboard
+- `www` - Marketing redirect
+- `api` - Future API subdomain
+- `admin` - Future admin panel
+
+### Internal Route Structure
+
+```
+app/
+├── (marketing)/          # memorywell.app
+│   └── page.tsx
+├── (dashboard)/          # app.memorywell.app → rewrites to /dashboard
+│   └── dashboard/
+│       └── page.tsx
+└── wall/[slug]/          # {slug}.memorywell.app → rewrites to /wall/{slug}
+    ├── page.tsx          # Wall view
+    ├── sign/page.tsx     # Signing form
+    └── layout.tsx
+```
+
+### Local Development
+
+For local subdomain testing:
+```bash
+# Add to /etc/hosts
+127.0.0.1 memorywell.localhost
+127.0.0.1 app.memorywell.localhost
+127.0.0.1 my-wedding.memorywell.localhost
+```
+
+Then access:
+- `http://memorywell.localhost:3000` → Marketing
+- `http://app.memorywell.localhost:3000` → Dashboard
+- `http://my-wedding.memorywell.localhost:3000` → Wall "my-wedding"
+
+### Vercel Configuration
+
+For production, configure wildcard domain in Vercel:
+1. Add `memorywell.app` as primary domain
+2. Add `*.memorywell.app` as wildcard subdomain
+3. DNS: Add A record for root + wildcard CNAME
+
+### Future: Custom Domains
+
+For premium users wanting `guestbook.sarahswedding.com`:
+1. User adds custom domain in dashboard
+2. Store mapping in `walls` table: `customDomain: v.optional(v.string())`
+3. User adds CNAME pointing to `cname.memorywell.app`
+4. Proxy checks custom domain before subdomain extraction
+5. SSL handled automatically by Vercel
+
+---
+
+## 6. Scalability Considerations
 
 | Concern                     | Strategy                                                          |
 | --------------------------- | ----------------------------------------------------------------- |
