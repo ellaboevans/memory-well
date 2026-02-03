@@ -211,3 +211,25 @@ export const remove = mutation({
     return null;
   },
 });
+
+/**
+ * Generate an upload URL for signature images
+ */
+export const generateUploadUrl = mutation({
+  args: {},
+  returns: v.string(),
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+/**
+ * Get signature image URL from storage ID
+ */
+export const getSignatureUrl = query({
+  args: { storageId: v.id("_storage") },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.storageId);
+  },
+});

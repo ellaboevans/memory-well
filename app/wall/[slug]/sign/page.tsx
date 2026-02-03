@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { SignaturePad } from "@/components/signature-pad";
+import { Id } from "@/convex/_generated/dataModel";
 
 const STICKER_OPTIONS = ["❤️", "🎉", "🙏", "✨", "💐", "🥳", "💝", "🌟"];
 
@@ -15,23 +17,34 @@ export default function SignWallPage() {
 
   const wall = useQuery(api.walls.getBySlug, { slug });
   const createEntry = useMutation(api.entries.create);
+  const generateUploadUrl = useMutation(api.entries.generateUploadUrl);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [relationship, setRelationship] = useState("");
   const [message, setMessage] = useState("");
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [selectedStickers, setSelectedStickers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleSignatureChange = useCallback((dataUrl: string | null) => {
+    setSignatureDataUrl(dataUrl);
+  }, []);
 
   const toggleSticker = (sticker: string) => {
     setSelectedStickers((prev) =>
       prev.includes(sticker)
         ? prev.filter((s) => s !== sticker)
         : prev.length < 3
-        ? [...prev, sticker]
-        : prev
+          ? [...prev, sticker]
+          : prev,
     );
+  };
+
+  // Convert data URL to blob
+  const dataUrlToBlob = async (dataUrl: string): Promise<Blob> => {
+    const res = await fetch(dataUrl);
+    return res.blob();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,12 +55,35 @@ export default function SignWallPage() {
     setError(null);
 
     try {
+      let signatureImageId: Id<"_storage"> | undefined;
+
+      // Upload signature if exists
+      if (signatureDataUrl) {
+        // Get upload URL
+        const uploadUrl = await generateUploadUrl();
+
+        // Convert data URL to blob and upload
+        const blob = await dataUrlToBlob(signatureDataUrl);
+        const uploadResponse = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": blob.type },
+          body: blob,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload signature");
+        }
+
+        const { storageId } = await uploadResponse.json();
+        signatureImageId = storageId;
+      }
+
       await createEntry({
         wallId: wall._id,
         name: name.trim(),
         email: email.trim() || undefined,
-        relationship: relationship.trim() || undefined,
         message: message.trim() || undefined,
+        signatureImageId,
         stickers: selectedStickers.length > 0 ? selectedStickers : undefined,
       });
 
@@ -80,9 +116,27 @@ export default function SignWallPage() {
           </p>
           <Link
             href="/"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors"
-          >
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors">
             Go to Memory Well
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Wall not accepting entries
+  if (!wall.acceptingEntries) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white mb-2">Wall Closed</h1>
+          <p className="text-zinc-400 mb-6">
+            This memory wall is no longer accepting new signatures.
+          </p>
+          <Link
+            href={`/wall/${slug}`}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors">
+            View Wall
           </Link>
         </div>
       </div>
@@ -96,8 +150,7 @@ export default function SignWallPage() {
         <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6">
           <Link
             href={`/wall/${slug}`}
-            className="text-sm text-zinc-400 hover:text-white transition-colors"
-          >
+            className="text-sm text-zinc-400 hover:text-white transition-colors">
             ← Back to {wall.title}
           </Link>
           <h1 className="mt-4 text-2xl font-bold text-white">
@@ -122,8 +175,7 @@ export default function SignWallPage() {
           <div>
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-zinc-300"
-            >
+              className="block text-sm font-medium text-zinc-300">
               Your Name <span className="text-red-400">*</span>
             </label>
             <input
@@ -137,52 +189,26 @@ export default function SignWallPage() {
             />
           </div>
 
-          {/* Email (optional) */}
+          {/* Signature Pad */}
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-zinc-300"
-            >
-              Email <span className="text-zinc-500">(optional)</span>
+            <label className="block text-sm font-medium text-zinc-300 mb-2">
+              Your Signature
             </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white placeholder-zinc-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
-              placeholder="john@example.com"
+            <SignaturePad
+              onSignatureChange={handleSignatureChange}
+              height={200}
             />
-            <p className="mt-1 text-xs text-zinc-500">
-              For verification purposes only. Won&apos;t be displayed publicly.
+            <p className="mt-2 text-xs text-zinc-500">
+              Use your mouse or finger to draw your signature
             </p>
-          </div>
-
-          {/* Relationship (optional) */}
-          <div>
-            <label
-              htmlFor="relationship"
-              className="block text-sm font-medium text-zinc-300"
-            >
-              Relationship <span className="text-zinc-500">(optional)</span>
-            </label>
-            <input
-              type="text"
-              id="relationship"
-              value={relationship}
-              onChange={(e) => setRelationship(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white placeholder-zinc-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
-              placeholder="Friend, Family, Colleague..."
-            />
           </div>
 
           {/* Message */}
           <div>
             <label
               htmlFor="message"
-              className="block text-sm font-medium text-zinc-300"
-            >
-              Your Message
+              className="block text-sm font-medium text-zinc-300">
+              Your Message <span className="text-zinc-500">(optional)</span>
             </label>
             <textarea
               id="message"
@@ -194,9 +220,31 @@ export default function SignWallPage() {
             />
           </div>
 
+          {/* Email (optional) */}
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-zinc-300">
+              Email <span className="text-zinc-500">(optional)</span>
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 block w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white placeholder-zinc-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+              placeholder="john@example.com"
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              For verification badge. Won&apos;t be displayed publicly.
+            </p>
+          </div>
+
           {/* Stickers */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label
+              htmlFor="stickers"
+              className="block text-sm font-medium text-zinc-300 mb-2">
               Add Stickers <span className="text-zinc-500">(up to 3)</span>
             </label>
             <div className="flex flex-wrap gap-2">
@@ -209,8 +257,7 @@ export default function SignWallPage() {
                     selectedStickers.includes(sticker)
                       ? "border-white bg-zinc-800 scale-110"
                       : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"
-                  }`}
-                >
+                  }`}>
                   {sticker}
                 </button>
               ))}
@@ -227,8 +274,7 @@ export default function SignWallPage() {
             <button
               type="submit"
               disabled={isSubmitting || !name.trim()}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-black bg-white hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-black bg-white hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               {isSubmitting ? "Signing..." : "Sign the Wall"}
             </button>
           </div>

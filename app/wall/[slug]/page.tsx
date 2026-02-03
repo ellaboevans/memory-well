@@ -4,15 +4,39 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import { Id } from "@/convex/_generated/dataModel";
+
+// Component to display signature image
+function SignatureImage({ storageId }: { storageId: Id<"_storage"> }) {
+  const url = useQuery(api.entries.getSignatureUrl, { storageId });
+
+  if (!url) {
+    return <div className="mt-3 h-16 bg-zinc-800 rounded animate-pulse" />;
+  }
+
+  return (
+    <div className="mt-3 bg-zinc-800 rounded-lg p-2 inline-block">
+      <Image
+        src={url}
+        alt="Signature"
+        width={200}
+        height={80}
+        className="max-h-20 w-auto"
+        unoptimized
+      />
+    </div>
+  );
+}
 
 export default function PublicWallPage() {
   const params = useParams();
   const slug = params.slug as string;
-  
+
   const wall = useQuery(api.walls.getBySlug, { slug });
   const entries = useQuery(
     api.entries.listByWall,
-    wall ? { wallId: wall._id } : "skip"
+    wall ? { wallId: wall._id } : "skip",
   );
 
   // Loading state
@@ -35,8 +59,7 @@ export default function PublicWallPage() {
           </p>
           <Link
             href="/"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors"
-          >
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors">
             Go to Memory Well
           </Link>
         </div>
@@ -56,8 +79,7 @@ export default function PublicWallPage() {
           <div className="mt-4 flex items-center gap-4">
             <Link
               href={`/wall/${slug}/sign`}
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors"
-            >
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors">
               Sign This Wall ✍️
             </Link>
           </div>
@@ -79,8 +101,7 @@ export default function PublicWallPage() {
             </p>
             <Link
               href={`/wall/${slug}/sign`}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors"
-            >
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors">
               Add your signature
             </Link>
           </div>
@@ -93,14 +114,10 @@ export default function PublicWallPage() {
               {entries.map((entry) => (
                 <div
                   key={entry._id}
-                  className="bg-zinc-900 border border-zinc-800 rounded-lg p-4"
-                >
+                  className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="font-medium text-white">{entry.name}</h3>
-                      {entry.relationship && (
-                        <p className="text-sm text-zinc-500">{entry.relationship}</p>
-                      )}
                     </div>
                     {entry.isVerified && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900/50 text-blue-400">
@@ -108,6 +125,9 @@ export default function PublicWallPage() {
                       </span>
                     )}
                   </div>
+                  {entry.signatureImageId && (
+                    <SignatureImage storageId={entry.signatureImageId} />
+                  )}
                   {entry.message && (
                     <p className="mt-3 text-zinc-300 text-sm whitespace-pre-wrap">
                       {entry.message}
@@ -116,7 +136,9 @@ export default function PublicWallPage() {
                   {entry.stickers && entry.stickers.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {entry.stickers.map((sticker, i) => (
-                        <span key={i} className="text-lg">{sticker}</span>
+                        <span key={i} className="text-lg">
+                          {sticker}
+                        </span>
                       ))}
                     </div>
                   )}
