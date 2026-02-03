@@ -67,21 +67,45 @@ export default function PublicWallPage() {
     );
   }
 
+  // Theme colors from wall settings
+  const theme = wall.theme;
+  const primaryColor = theme.primaryColor;
+  const backgroundColor = theme.backgroundColor;
+  const fontFamily = theme.fontFamily;
+
+  // Calculate contrast color for buttons (dark text on light bg, light text on dark bg)
+  const isLightPrimary = Number.parseInt(primaryColor.slice(1), 16) > 0x7fffff;
+  const buttonTextColor = isLightPrimary ? "#000000" : "#ffffff";
+
+  // Border color with transparency
+  const borderColor = `${primaryColor}30`;
+  const cardBgColor = `${primaryColor}08`;
+
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen" style={{ backgroundColor, fontFamily }}>
       {/* Wall header */}
-      <header className="border-b border-zinc-800">
+      <header style={{ borderBottomColor: borderColor, borderBottomWidth: 1 }}>
         <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-white">{wall.title}</h1>
+          <h1 className="text-3xl font-bold" style={{ color: primaryColor }}>
+            {wall.title}
+          </h1>
           {wall.description && (
-            <p className="mt-2 text-zinc-400">{wall.description}</p>
+            <p className="mt-2 opacity-70" style={{ color: primaryColor }}>
+              {wall.description}
+            </p>
           )}
           <div className="mt-4 flex items-center gap-4">
-            <Link
-              href={`/wall/${slug}/sign`}
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors">
-              Sign This Wall ✍️
-            </Link>
+            {wall.acceptingEntries && (
+              <Link
+                href={`/wall/${slug}/sign`}
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm transition-opacity hover:opacity-90"
+                style={{
+                  backgroundColor: primaryColor,
+                  color: buttonTextColor,
+                }}>
+                Sign This Wall ✍️
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -89,38 +113,62 @@ export default function PublicWallPage() {
       {/* Entries grid */}
       <main className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {entries === undefined ? (
-          <div className="text-zinc-400">Loading signatures...</div>
+          <div style={{ color: primaryColor }} className="opacity-60">
+            Loading signatures...
+          </div>
         ) : entries.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">📝</div>
-            <h2 className="text-xl font-semibold text-white mb-2">
+            <h2
+              className="text-xl font-semibold mb-2"
+              style={{ color: primaryColor }}>
               No signatures yet
             </h2>
-            <p className="text-zinc-400 mb-6">
+            <p className="mb-6 opacity-60" style={{ color: primaryColor }}>
               Be the first to sign this memory wall!
             </p>
-            <Link
-              href={`/wall/${slug}/sign`}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors">
-              Add your signature
-            </Link>
+            {wall.acceptingEntries && (
+              <Link
+                href={`/wall/${slug}/sign`}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm transition-opacity hover:opacity-90"
+                style={{
+                  backgroundColor: primaryColor,
+                  color: buttonTextColor,
+                }}>
+                Add your signature
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm opacity-50" style={{ color: primaryColor }}>
               {entries.length} signature{entries.length === 1 ? "" : "s"}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {entries.map((entry) => (
                 <div
                   key={entry._id}
-                  className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+                  className="rounded-lg p-4"
+                  style={{
+                    backgroundColor: cardBgColor,
+                    borderColor,
+                    borderWidth: 1,
+                  }}>
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-medium text-white">{entry.name}</h3>
+                      <h3
+                        className="font-medium"
+                        style={{ color: primaryColor }}>
+                        {entry.name}
+                      </h3>
                     </div>
                     {entry.isVerified && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900/50 text-blue-400">
+                      <span
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                        style={{
+                          backgroundColor: `${primaryColor}20`,
+                          color: primaryColor,
+                        }}>
                         ✓ Verified
                       </span>
                     )}
@@ -129,20 +177,24 @@ export default function PublicWallPage() {
                     <SignatureImage storageId={entry.signatureImageId} />
                   )}
                   {entry.message && (
-                    <p className="mt-3 text-zinc-300 text-sm whitespace-pre-wrap">
+                    <p
+                      className="mt-3 text-sm whitespace-pre-wrap opacity-80"
+                      style={{ color: primaryColor }}>
                       {entry.message}
                     </p>
                   )}
                   {entry.stickers && entry.stickers.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {entry.stickers.map((sticker, i) => (
-                        <span key={i} className="text-lg">
+                        <span key={i + 1} className="text-lg">
                           {sticker}
                         </span>
                       ))}
                     </div>
                   )}
-                  <p className="mt-3 text-xs text-zinc-600">
+                  <p
+                    className="mt-3 text-xs opacity-40"
+                    style={{ color: primaryColor }}>
                     {new Date(entry._creationTime).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "short",
@@ -157,11 +209,18 @@ export default function PublicWallPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-800 mt-auto">
+      <footer
+        className="mt-auto"
+        style={{ borderTopColor: borderColor, borderTopWidth: 1 }}>
         <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-zinc-500">
+          <p
+            className="text-center text-sm opacity-50"
+            style={{ color: primaryColor }}>
             Powered by{" "}
-            <Link href="/" className="text-white hover:text-zinc-300">
+            <Link
+              href="/"
+              className="hover:opacity-80 transition-opacity"
+              style={{ color: primaryColor }}>
               Memory Well
             </Link>
           </p>

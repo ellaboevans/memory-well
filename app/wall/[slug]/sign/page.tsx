@@ -143,20 +143,29 @@ export default function SignWallPage() {
     );
   }
 
+  // Theme from wall
+  const { primaryColor, backgroundColor, fontFamily } = wall.theme;
+  const isLightPrimary = Number.parseInt(primaryColor.slice(1), 16) > 0x7fffff;
+  const buttonTextColor = isLightPrimary ? "#000000" : "#ffffff";
+  const borderColor = `${primaryColor}30`;
+
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen" style={{ backgroundColor, fontFamily }}>
       {/* Header */}
-      <header className="border-b border-zinc-800">
+      <header style={{ borderBottomColor: borderColor, borderBottomWidth: 1 }}>
         <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6">
           <Link
             href={`/wall/${slug}`}
-            className="text-sm text-zinc-400 hover:text-white transition-colors">
+            className="text-sm opacity-60 hover:opacity-100 transition-opacity"
+            style={{ color: primaryColor }}>
             ← Back to {wall.title}
           </Link>
-          <h1 className="mt-4 text-2xl font-bold text-white">
+          <h1
+            className="mt-4 text-2xl font-bold"
+            style={{ color: primaryColor }}>
             Sign the Wall ✍️
           </h1>
-          <p className="mt-1 text-zinc-400">
+          <p className="mt-1 opacity-60" style={{ color: primaryColor }}>
             Leave your signature for {wall.title}
           </p>
         </div>
@@ -175,7 +184,8 @@ export default function SignWallPage() {
           <div>
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-zinc-300">
+              className="block text-sm font-medium"
+              style={{ color: primaryColor, opacity: 0.9 }}>
               Your Name <span className="text-red-400">*</span>
             </label>
             <input
@@ -191,7 +201,9 @@ export default function SignWallPage() {
 
           {/* Signature Pad */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label
+              htmlFor="signature"
+              className="block text-sm font-medium text-zinc-300 mb-2">
               Your Signature
             </label>
             <SignaturePad
@@ -274,7 +286,8 @@ export default function SignWallPage() {
             <button
               type="submit"
               disabled={isSubmitting || !name.trim()}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-black bg-white hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity hover:opacity-90"
+              style={{ backgroundColor: primaryColor, color: buttonTextColor }}>
               {isSubmitting ? "Signing..." : "Sign the Wall"}
             </button>
           </div>

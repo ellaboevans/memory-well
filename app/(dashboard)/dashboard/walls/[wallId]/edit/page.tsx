@@ -8,6 +8,23 @@ import { useParams, useRouter } from "next/navigation";
 import { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
 
+const FONT_OPTIONS = [
+  { value: "Geist", label: "Geist (Default)" },
+  { value: "Inter", label: "Inter" },
+  { value: "Georgia", label: "Georgia (Serif)" },
+  { value: "Playfair Display", label: "Playfair Display" },
+  { value: "Roboto Mono", label: "Roboto Mono" },
+];
+
+const COLOR_PRESETS = [
+  { name: "Default", primary: "#ffffff", background: "#0a0a0a" },
+  { name: "Ocean", primary: "#60a5fa", background: "#0f172a" },
+  { name: "Forest", primary: "#4ade80", background: "#052e16" },
+  { name: "Sunset", primary: "#fb923c", background: "#1c1917" },
+  { name: "Rose", primary: "#f472b6", background: "#1f1218" },
+  { name: "Lavender", primary: "#a78bfa", background: "#1e1b2e" },
+];
+
 export default function EditWallPage() {
   const params = useParams();
   const router = useRouter();
@@ -20,6 +37,12 @@ export default function EditWallPage() {
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [acceptingEntries, setAcceptingEntries] = useState(true);
+
+  // Theme state
+  const [primaryColor, setPrimaryColor] = useState("#ffffff");
+  const [backgroundColor, setBackgroundColor] = useState("#0a0a0a");
+  const [fontFamily, setFontFamily] = useState("Geist");
+
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -31,6 +54,9 @@ export default function EditWallPage() {
       setDescription(wall.description ?? "");
       setVisibility(wall.visibility);
       setAcceptingEntries(wall.acceptingEntries);
+      setPrimaryColor(wall.theme.primaryColor);
+      setBackgroundColor(wall.theme.backgroundColor);
+      setFontFamily(wall.theme.fontFamily);
     }
   }, [wall]);
 
@@ -41,10 +67,22 @@ export default function EditWallPage() {
         title !== wall.title ||
         description !== (wall.description ?? "") ||
         visibility !== wall.visibility ||
-        acceptingEntries !== wall.acceptingEntries;
+        acceptingEntries !== wall.acceptingEntries ||
+        primaryColor !== wall.theme.primaryColor ||
+        backgroundColor !== wall.theme.backgroundColor ||
+        fontFamily !== wall.theme.fontFamily;
       setHasChanges(changed);
     }
-  }, [wall, title, description, visibility, acceptingEntries]);
+  }, [
+    wall,
+    title,
+    description,
+    visibility,
+    acceptingEntries,
+    primaryColor,
+    backgroundColor,
+    fontFamily,
+  ]);
 
   if (wall === undefined) {
     return (
@@ -88,6 +126,11 @@ export default function EditWallPage() {
         description: description.trim() || undefined,
         visibility,
         acceptingEntries,
+        theme: {
+          primaryColor,
+          backgroundColor,
+          fontFamily,
+        },
       });
       router.push(`/dashboard/walls/${wallId}`);
     } catch (err) {
@@ -175,6 +218,154 @@ export default function EditWallPage() {
               onChange={(e) => setDescription(e.target.value)}
               className="mt-1 block w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white placeholder-zinc-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white resize-none"
             />
+          </div>
+
+          {/* Theme Section */}
+          <div className="border-t border-zinc-800 pt-6">
+            <h3 className="text-lg font-medium text-white mb-4">
+              Theme & Appearance
+            </h3>
+
+            {/* Color Presets */}
+            <div className="mb-6">
+              <label
+                htmlFor="color-presets"
+                className="block text-sm font-medium text-zinc-300 mb-2">
+                Color Presets
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {COLOR_PRESETS.map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() => {
+                      setPrimaryColor(preset.primary);
+                      setBackgroundColor(preset.background);
+                    }}
+                    className={`p-3 rounded-lg border transition-all ${
+                      primaryColor === preset.primary &&
+                      backgroundColor === preset.background
+                        ? "border-white ring-1 ring-white"
+                        : "border-zinc-700 hover:border-zinc-600"
+                    }`}
+                    style={{ backgroundColor: preset.background }}>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: preset.primary }}
+                      />
+                      <span
+                        className="text-xs"
+                        style={{ color: preset.primary }}>
+                        {preset.name}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Colors */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label
+                  htmlFor="primaryColor"
+                  className="block text-sm font-medium text-zinc-300 mb-1">
+                  Primary Color
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    id="primaryColor"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="h-10 w-14 rounded border border-zinc-700 bg-zinc-800 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white text-sm font-mono"
+                  />
+                </div>
+              </div>
+              <div>
+                <label
+                  htmlFor="backgroundColor"
+                  className="block text-sm font-medium text-zinc-300 mb-1">
+                  Background Color
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    id="backgroundColor"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                    className="h-10 w-14 rounded border border-zinc-700 bg-zinc-800 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                    className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white text-sm font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Font Family */}
+            <div className="mb-6">
+              <label
+                htmlFor="fontFamily"
+                className="block text-sm font-medium text-zinc-300 mb-1">
+                Font Family
+              </label>
+              <select
+                id="fontFamily"
+                value={fontFamily}
+                onChange={(e) => setFontFamily(e.target.value)}
+                className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white">
+                {FONT_OPTIONS.map((font) => (
+                  <option key={font.value} value={font.value}>
+                    {font.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Preview */}
+            <div className="mb-2">
+              <label
+                htmlFor="preview"
+                className="block text-sm font-medium text-zinc-300 mb-2">
+                Preview
+              </label>
+              <div
+                className="rounded-lg border border-zinc-700 p-6 transition-colors"
+                style={{ backgroundColor, fontFamily }}>
+                <h4
+                  className="text-lg font-semibold mb-2"
+                  style={{ color: primaryColor }}>
+                  {title || "Wall Title"}
+                </h4>
+                <p
+                  className="text-sm opacity-70"
+                  style={{ color: primaryColor }}>
+                  {description || "Your wall description will appear here..."}
+                </p>
+                <div
+                  className="mt-4 p-3 rounded-lg"
+                  style={{
+                    backgroundColor: `${primaryColor}10`,
+                    borderColor: `${primaryColor}30`,
+                    borderWidth: 1,
+                  }}>
+                  <p className="text-sm" style={{ color: primaryColor }}>
+                    Sample signature entry preview
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Visibility */}
