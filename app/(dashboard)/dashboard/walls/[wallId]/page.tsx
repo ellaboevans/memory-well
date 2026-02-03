@@ -191,6 +191,11 @@ export default function WallDetailPage() {
         </div>
         <div className="flex gap-2">
           <Link
+            href={`/dashboard/walls/${wallId}/export`}
+            className="px-4 py-2 border border-zinc-700 rounded-md text-sm font-medium text-white hover:bg-zinc-800 transition-colors">
+            Export
+          </Link>
+          <Link
             href={`/dashboard/walls/${wallId}/edit`}
             className="px-4 py-2 border border-zinc-700 rounded-md text-sm font-medium text-white hover:bg-zinc-800 transition-colors">
             Edit Wall
