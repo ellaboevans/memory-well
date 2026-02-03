@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Memory Well 🌊
 
-## Getting Started
+A multi-tenant digital guestbook platform for preserving memories. Create beautiful, customizable walls where visitors can leave signatures, messages, and heartfelt notes for weddings, memorials, graduations, and any special occasion.
 
-First, run the development server:
+![Memory Well](https://img.shields.io/badge/Next.js-16-black) ![Convex](https://img.shields.io/badge/Convex-Serverless-orange) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## ✨ Features
+
+- **Create Memory Walls** - Beautiful, themed walls for any occasion
+- **Signature Pad** - Smooth, touch-friendly signature capture with Bézier curves
+- **Custom Theming** - 6 color presets + custom colors and fonts
+- **Cover Images** - Notion-style cover image upload
+- **Entry Moderation** - Hide, delete, or verify visitor entries
+- **Export** - Download walls as PDF, PNG, or JPG
+- **One-Time Payment** - Lifetime premium access via Polar.sh
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 16 (App Router, Turbopack)
+- **Backend**: Convex (serverless functions + real-time database)
+- **Auth**: Convex Auth with Password provider
+- **Styling**: Tailwind CSS v4 + shadcn/ui
+- **Payments**: Polar.sh
+- **Signature**: signature_pad library
+- **Export**: html2canvas + jspdf
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- pnpm (recommended)
+- Convex account
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/ellaboevans/memory-well.git
+   cd memory-well
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+3. Set up environment variables:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+4. Configure your `.env.local`:
+
+   ```env
+   CONVEX_DEPLOYMENT=your-convex-deployment
+   NEXT_PUBLIC_CONVEX_URL=your-convex-url
+   NEXT_PUBLIC_CONVEX_SITE_URL=your-convex-site-url
+   POLAR_ACCESS_TOKEN=your-polar-token
+   POLAR_WEBHOOK_SECRET=your-polar-webhook-secret
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   ```
+
+5. Start Convex backend:
+
+   ```bash
+   npx convex dev
+   ```
+
+6. Start the development server:
+
+   ```bash
+   pnpm dev
+   ```
+
+7. Open [http://localhost:3000](http://localhost:3000)
+
+## 📁 Project Structure
+
+```
+memory-well/
+├── app/                    # Next.js App Router
+│   ├── (marketing)/        # Landing page
+│   ├── (auth)/             # Sign in/up pages
+│   ├── (dashboard)/        # Protected dashboard
+│   ├── api/                # API routes (checkout, webhooks)
+│   └── wall/[slug]/        # Public wall pages
+├── components/             # React components
+│   ├── ui/                 # shadcn/ui primitives
+│   ├── dashboard/          # Dashboard components
+│   ├── export/             # Export components
+│   └── landing/            # Landing page sections
+├── convex/                 # Convex backend
+│   ├── schema.ts           # Database schema
+│   ├── walls.ts            # Wall mutations/queries
+│   ├── entries.ts          # Entry mutations/queries
+│   └── subscriptions.ts    # Payment handlers
+└── lib/                    # Utilities
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🎨 Wall Themes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Memory Well includes 6 built-in color presets:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Midnight** - Deep purple elegance
+- **Ocean** - Calm blue tones
+- **Forest** - Natural green hues
+- **Sunset** - Warm orange glow
+- **Rose** - Soft pink aesthetics
+- **Slate** - Modern neutral gray
 
-## Learn More
+Plus custom color pickers for primary and background colors.
 
-To learn more about Next.js, take a look at the following resources:
+## 💳 Payments
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Memory Well uses [Polar.sh](https://polar.sh) for one-time lifetime payments:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Free Tier**: 3 walls, 50 signatures per wall, basic themes
+- **Premium**: Unlimited walls, unlimited signatures, all themes, export, custom branding
 
-## Deploy on Vercel
+## 📄 License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+MIT
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🤝 Contributing
+
+Contributions are welcome! Please read the contributing guidelines first.
+
+---
+
+Built with ❤️ by [Evans Ellaboevans](https://github.com/ellaboevans)
