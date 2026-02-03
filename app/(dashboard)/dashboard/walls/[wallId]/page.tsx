@@ -12,10 +12,10 @@ export default function WallDetailPage() {
   const router = useRouter();
   const wallId = params.wallId as Id<"walls">;
 
-  const wall = useQuery(api.walls.get, { id: wallId });
+  const wall = useQuery(api.walls.get, { wallId });
   const entries = useQuery(
     api.entries.listByWall,
-    wall ? { wallId: wall._id, includeHidden: true } : "skip",
+    wall ? { wallId: wall._id } : "skip",
   );
   const entryCount = useQuery(
     api.entries.countByWall,
@@ -57,16 +57,115 @@ export default function WallDetailPage() {
   }
 
   const handleDeleteWall = async () => {
-    await removeWall({ id: wallId });
+    await removeWall({ wallId });
     router.push("/dashboard");
   };
 
   const handleDeleteEntry = async (entryId: Id<"entries">) => {
-    await removeEntry({ id: entryId });
+    await removeEntry({ entryId });
     setDeletingEntryId(null);
   };
 
+  const getVisibilityStyle = (visibility: "public" | "private") => {
+    return visibility === "public"
+      ? "bg-green-900/50 text-green-400"
+      : "bg-red-900/50 text-red-400";
+  };
+
   const wallUrl = `${wall.slug}.memorywell.app`;
+
+  const renderEntries = () => {
+    if (entries === undefined) {
+      return <div className="text-zinc-400">Loading signatures...</div>;
+    }
+
+    if (entries.length === 0) {
+      return (
+        <div className="text-center py-12 bg-zinc-900 border border-zinc-800 rounded-lg">
+          <div className="text-5xl mb-4">📝</div>
+          <h3 className="text-lg font-medium text-white mb-2">
+            No signatures yet
+          </h3>
+          <p className="text-zinc-400">
+            Share your wall link to start collecting signatures
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {entries.map((entry) => (
+          <div
+            key={entry._id}
+            className={`bg-zinc-900 border rounded-lg p-4 ${
+              entry.isHidden ? "border-zinc-700 opacity-60" : "border-zinc-800"
+            }`}>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-white">{entry.name}</h3>
+                  {entry.isVerified && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900/50 text-blue-400">
+                      ✓ Verified
+                    </span>
+                  )}
+                  {entry.isHidden && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-700 text-zinc-400">
+                      Hidden
+                    </span>
+                  )}
+                </div>
+                {entry.message && (
+                  <p className="mt-2 text-zinc-300 text-sm whitespace-pre-wrap">
+                    {entry.message}
+                  </p>
+                )}
+                {entry.stickers && entry.stickers.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {entry.stickers.map((sticker) => (
+                      <span key={sticker} className="text-lg">
+                        {sticker}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-zinc-600">
+                  {new Date(entry._creationTime).toLocaleString()}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 ml-4">
+                <button
+                  onClick={() => toggleVerified({ entryId: entry._id })}
+                  className="p-2 text-zinc-400 hover:text-white transition-colors"
+                  title={
+                    entry.isVerified
+                      ? "Remove verification"
+                      : "Mark as verified"
+                  }>
+                  {entry.isVerified ? "✓" : "○"}
+                </button>
+                <button
+                  onClick={() => toggleHidden({ entryId: entry._id })}
+                  className="p-2 text-zinc-400 hover:text-white transition-colors"
+                  title={entry.isHidden ? "Show entry" : "Hide entry"}>
+                  {entry.isHidden ? "👁" : "👁‍🗨"}
+                </button>
+                <button
+                  onClick={() => setDeletingEntryId(entry._id)}
+                  className="p-2 text-zinc-400 hover:text-red-400 transition-colors"
+                  title="Delete entry">
+                  🗑
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -117,13 +216,7 @@ export default function WallDetailPage() {
           <dt className="text-sm font-medium text-zinc-400">Visibility</dt>
           <dd className="mt-1">
             <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded text-sm font-medium ${
-                wall.visibility === "public"
-                  ? "bg-green-900/50 text-green-400"
-                  : wall.visibility === "unlisted"
-                    ? "bg-yellow-900/50 text-yellow-400"
-                    : "bg-red-900/50 text-red-400"
-              }`}>
+              className={`inline-flex items-center px-2.5 py-0.5 rounded text-sm font-medium ${getVisibilityStyle(wall.visibility)}`}>
               {wall.visibility}
             </span>
           </dd>
@@ -165,98 +258,7 @@ export default function WallDetailPage() {
         <h2 className="text-lg font-semibold text-white mb-4">
           Signatures ({entries?.length ?? 0})
         </h2>
-
-        {entries === undefined ? (
-          <div className="text-zinc-400">Loading signatures...</div>
-        ) : entries.length === 0 ? (
-          <div className="text-center py-12 bg-zinc-900 border border-zinc-800 rounded-lg">
-            <div className="text-5xl mb-4">📝</div>
-            <h3 className="text-lg font-medium text-white mb-2">
-              No signatures yet
-            </h3>
-            <p className="text-zinc-400">
-              Share your wall link to start collecting signatures
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {entries.map((entry) => (
-              <div
-                key={entry._id}
-                className={`bg-zinc-900 border rounded-lg p-4 ${
-                  entry.isHidden
-                    ? "border-zinc-700 opacity-60"
-                    : "border-zinc-800"
-                }`}>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-white">{entry.name}</h3>
-                      {entry.isVerified && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900/50 text-blue-400">
-                          ✓ Verified
-                        </span>
-                      )}
-                      {entry.isHidden && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-700 text-zinc-400">
-                          Hidden
-                        </span>
-                      )}
-                    </div>
-                    {entry.relationship && (
-                      <p className="text-sm text-zinc-500">
-                        {entry.relationship}
-                      </p>
-                    )}
-                    {entry.message && (
-                      <p className="mt-2 text-zinc-300 text-sm whitespace-pre-wrap">
-                        {entry.message}
-                      </p>
-                    )}
-                    {entry.stickers && entry.stickers.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {entry.stickers.map((sticker, i) => (
-                          <span key={i} className="text-lg">
-                            {sticker}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <p className="mt-2 text-xs text-zinc-600">
-                      {new Date(entry._creationTime).toLocaleString()}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => toggleVerified({ id: entry._id })}
-                      className="p-2 text-zinc-400 hover:text-white transition-colors"
-                      title={
-                        entry.isVerified
-                          ? "Remove verification"
-                          : "Mark as verified"
-                      }>
-                      {entry.isVerified ? "✓" : "○"}
-                    </button>
-                    <button
-                      onClick={() => toggleHidden({ id: entry._id })}
-                      className="p-2 text-zinc-400 hover:text-white transition-colors"
-                      title={entry.isHidden ? "Show entry" : "Hide entry"}>
-                      {entry.isHidden ? "👁" : "👁‍🗨"}
-                    </button>
-                    <button
-                      onClick={() => setDeletingEntryId(entry._id)}
-                      className="p-2 text-zinc-400 hover:text-red-400 transition-colors"
-                      title="Delete entry">
-                      🗑
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {renderEntries()}
       </div>
 
       {/* Delete wall confirmation */}

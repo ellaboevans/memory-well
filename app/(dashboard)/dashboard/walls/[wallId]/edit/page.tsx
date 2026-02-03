@@ -12,14 +12,12 @@ export default function EditWallPage() {
   const router = useRouter();
   const wallId = params.wallId as Id<"walls">;
 
-  const wall = useQuery(api.walls.get, { id: wallId });
+  const wall = useQuery(api.walls.get, { wallId });
   const updateWall = useMutation(api.walls.update);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [visibility, setVisibility] = useState<
-    "public" | "unlisted" | "private"
-  >("public");
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [acceptingEntries, setAcceptingEntries] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -84,7 +82,7 @@ export default function EditWallPage() {
 
     try {
       await updateWall({
-        id: wallId,
+        wallId,
         title: title.trim(),
         description: description.trim() || undefined,
         visibility,
@@ -140,7 +138,9 @@ export default function EditWallPage() {
 
           {/* Slug (read-only) */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300">
+            <label
+              htmlFor="slug"
+              className="block text-sm font-medium text-zinc-300">
               URL Slug
             </label>
             <div className="mt-1 flex rounded-md">
@@ -149,6 +149,7 @@ export default function EditWallPage() {
               </span>
               <input
                 type="text"
+                id="slug"
                 disabled
                 value={wall.slug}
                 className="flex-1 block w-full rounded-none rounded-r-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-500 cursor-not-allowed"
@@ -177,55 +178,53 @@ export default function EditWallPage() {
 
           {/* Visibility */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Visibility
-            </label>
-            <div className="space-y-2">
-              {[
-                {
-                  value: "public" as const,
-                  label: "Public",
-                  description: "Anyone with the link can view and sign",
-                },
-                {
-                  value: "unlisted" as const,
-                  label: "Unlisted",
-                  description: "Hidden from search, but accessible via link",
-                },
-                {
-                  value: "private" as const,
-                  label: "Private",
-                  description: "Only you can view (signing disabled)",
-                },
-              ].map((option) => (
-                <label
-                  key={option.value}
-                  className={`flex items-start p-3 rounded-lg border cursor-pointer transition-colors ${
-                    visibility === option.value
-                      ? "border-white bg-zinc-800"
-                      : "border-zinc-700 hover:border-zinc-600"
-                  }`}>
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value={option.value}
-                    checked={visibility === option.value}
-                    onChange={(e) =>
-                      setVisibility(e.target.value as typeof visibility)
-                    }
-                    className="mt-0.5 h-4 w-4 text-white border-zinc-600 bg-zinc-800 focus:ring-white"
-                  />
-                  <div className="ml-3">
-                    <span className="text-sm font-medium text-white">
-                      {option.label}
-                    </span>
-                    <p className="text-xs text-zinc-500">
-                      {option.description}
-                    </p>
-                  </div>
-                </label>
-              ))}
-            </div>
+            <fieldset>
+              <legend className="block text-sm font-medium text-zinc-300 mb-2">
+                Visibility
+              </legend>
+              <div className="space-y-2">
+                {[
+                  {
+                    value: "public" as const,
+                    label: "Public",
+                    description: "Anyone with the link can view and sign",
+                  },
+                  {
+                    value: "private" as const,
+                    label: "Private",
+                    description: "Only you can view (signing disabled)",
+                  },
+                ].map((option) => (
+                  <label
+                    key={option.value}
+                    aria-label={`${option.label}: ${option.description}`}
+                    className={`flex items-start p-3 rounded-lg border cursor-pointer transition-colors ${
+                      visibility === option.value
+                        ? "border-white bg-zinc-800"
+                        : "border-zinc-700 hover:border-zinc-600"
+                    }`}>
+                    <input
+                      type="radio"
+                      name="visibility"
+                      value={option.value}
+                      checked={visibility === option.value}
+                      onChange={(e) =>
+                        setVisibility(e.target.value as typeof visibility)
+                      }
+                      className="mt-0.5 h-4 w-4 text-white border-zinc-600 bg-zinc-800 focus:ring-white"
+                    />
+                    <div className="ml-3">
+                      <span className="text-sm font-medium text-white">
+                        {option.label}
+                      </span>
+                      <p className="text-xs text-zinc-500">
+                        {option.description}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           </div>
 
           {/* Accepting entries toggle */}

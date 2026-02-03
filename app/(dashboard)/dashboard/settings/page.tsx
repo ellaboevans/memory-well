@@ -1,0 +1,176 @@
+"use client";
+
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { User, Mail, Shield, Trash2 } from "lucide-react";
+
+export default function SettingsPage() {
+  const profile = useQuery(api.profiles.me);
+  const updateProfile = useMutation(api.profiles.updateProfile);
+
+  const [displayName, setDisplayName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.displayName ?? "");
+    }
+  }, [profile]);
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    setSuccessMessage("");
+    try {
+      await updateProfile({ displayName: displayName.trim() || undefined });
+      setSuccessMessage("Profile updated successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!profile) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Settings</h1>
+          <p className="mt-1 text-sm text-zinc-400">
+            Manage your account settings and preferences
+          </p>
+        </div>
+        <div className="animate-pulse space-y-4">
+          <div className="h-48 bg-zinc-900 rounded-lg" />
+          <div className="h-48 bg-zinc-900 rounded-lg" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Settings</h1>
+        <p className="mt-1 text-sm text-zinc-400">
+          Manage your account settings and preferences
+        </p>
+      </div>
+
+      {/* Profile Settings */}
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <User className="h-5 w-5 text-zinc-400" />
+            <CardTitle className="text-white">Profile</CardTitle>
+          </div>
+          <CardDescription>Update your personal information</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="displayName" className="text-zinc-300">
+              Display Name
+            </Label>
+            <Input
+              id="displayName"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Enter your display name"
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            <Button onClick={handleSaveProfile} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+            {successMessage && (
+              <span className="text-sm text-green-400">{successMessage}</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Account Information */}
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Mail className="h-5 w-5 text-zinc-400" />
+            <CardTitle className="text-white">Account</CardTitle>
+          </div>
+          <CardDescription>Your account information</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-zinc-300">Email Address</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                value={profile.email ?? ""}
+                disabled
+                className="bg-zinc-800 border-zinc-700 text-zinc-400"
+              />
+              <Shield
+                className="h-5 w-5 text-green-500"
+                aria-label="Verified"
+              />
+            </div>
+            <p className="text-xs text-zinc-500">Email cannot be changed</p>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-zinc-300">Account Type</Label>
+            <div className="text-white capitalize">
+              {profile.tier ?? "free"}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-zinc-300">Member Since</Label>
+            <div className="text-white">
+              {new Date(profile._creationTime).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Danger Zone */}
+      <Card className="bg-zinc-900 border-red-900/50">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Trash2 className="h-5 w-5 text-red-400" />
+            <CardTitle className="text-red-400">Danger Zone</CardTitle>
+          </div>
+          <CardDescription>
+            Irreversible and destructive actions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white font-medium">Delete Account</p>
+              <p className="text-sm text-zinc-400">
+                Permanently delete your account and all associated data
+              </p>
+            </div>
+            <Button variant="destructive" disabled>
+              Delete Account
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

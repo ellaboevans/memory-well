@@ -27,6 +27,25 @@ const wallValidator = v.object({
   updatedAt: v.number(),
 });
 
+// Wall with entry count for lists
+const wallWithCountValidator = v.object({
+  _id: v.id("walls"),
+  _creationTime: v.number(),
+  ownerId: v.id("users"),
+  slug: v.string(),
+  title: v.string(),
+  description: v.optional(v.string()),
+  coverImageId: v.optional(v.id("_storage")),
+  theme: themeValidator,
+  visibility: v.union(v.literal("private"), v.literal("public")),
+  acceptingEntries: v.boolean(),
+  entryWindowStart: v.optional(v.number()),
+  entryWindowEnd: v.optional(v.number()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  entryCount: v.number(),
+});
+
 const MAX_FREE_WALLS = 3;
 
 /**
@@ -34,15 +53,31 @@ const MAX_FREE_WALLS = 3;
  */
 export const listMyWalls = query({
   args: {},
-  returns: v.array(wallValidator),
+  returns: v.array(wallWithCountValidator),
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
-    return await ctx.db
+    const walls = await ctx.db
       .query("walls")
       .withIndex("by_owner", (q) => q.eq("ownerId", userId))
       .collect();
+
+    // Get entry counts for each wall
+    const wallsWithCounts = await Promise.all(
+      walls.map(async (wall) => {
+        const entries = await ctx.db
+          .query("entries")
+          .withIndex("by_wall", (q) => q.eq("wallId", wall._id))
+          .collect();
+        return {
+          ...wall,
+          entryCount: entries.length,
+        };
+      }),
+    );
+
+    return wallsWithCounts;
   },
 });
 
