@@ -1,0 +1,71 @@
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
+
+const applicationTables = {
+  // User profile (extends auth user)
+  profiles: defineTable({
+    userId: v.id("users"),
+    name: v.optional(v.string()),
+    avatarUrl: v.optional(v.string()),
+    tier: v.union(v.literal("free"), v.literal("premium")),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  // Memory walls
+  walls: defineTable({
+    ownerId: v.id("users"),
+    slug: v.string(),
+    title: v.string(),
+    description: v.optional(v.string()),
+    coverImageId: v.optional(v.id("_storage")),
+    theme: v.object({
+      primaryColor: v.string(),
+      backgroundColor: v.string(),
+      fontFamily: v.string(),
+    }),
+    visibility: v.union(v.literal("private"), v.literal("public")),
+    acceptingEntries: v.boolean(),
+    entryWindowStart: v.optional(v.number()),
+    entryWindowEnd: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_slug", ["slug"]),
+
+  // Guest entries/signatures
+  entries: defineTable({
+    wallId: v.id("walls"),
+    name: v.string(),
+    message: v.optional(v.string()),
+    signatureImageId: v.optional(v.id("_storage")),
+    stickers: v.optional(v.array(v.string())),
+    email: v.optional(v.string()),
+    isVerified: v.boolean(),
+    isHidden: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_wall", ["wallId"])
+    .index("by_wall_created", ["wallId", "createdAt"]),
+
+  // Subscriptions for billing
+  subscriptions: defineTable({
+    userId: v.id("users"),
+    paystackCustomerId: v.string(),
+    paystackSubscriptionId: v.optional(v.string()),
+    status: v.union(
+      v.literal("active"),
+      v.literal("cancelled"),
+      v.literal("past_due"),
+      v.literal("trialing"),
+    ),
+    currentPeriodEnd: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
+};
+
+export default defineSchema({
+  ...authTables,
+  ...applicationTables,
+});
