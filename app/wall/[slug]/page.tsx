@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Id } from "@/convex/_generated/dataModel";
@@ -60,6 +61,12 @@ export default function PublicWallPage() {
     api.entries.listByWall,
     wall ? { wallId: wall._id } : "skip",
   );
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Loading state
   if (wall === undefined) {
@@ -95,6 +102,12 @@ export default function PublicWallPage() {
   const backgroundColor = theme.backgroundColor;
   const fontFamily = theme.fontFamily;
 
+  const windowNotStarted =
+    wall.entryWindowStart !== undefined && now < wall.entryWindowStart;
+  const windowClosed =
+    wall.entryWindowEnd !== undefined && now > wall.entryWindowEnd;
+  const canSign = wall.acceptingEntries && !windowNotStarted && !windowClosed;
+
   // Calculate contrast color for buttons (dark text on light bg, light text on dark bg)
   const isLightPrimary = Number.parseInt(primaryColor.slice(1), 16) > 0x7fffff;
   const buttonTextColor = isLightPrimary ? "#000000" : "#ffffff";
@@ -120,7 +133,7 @@ export default function PublicWallPage() {
             </p>
           )}
           <div className="mt-4 flex items-center gap-4">
-            {wall.acceptingEntries && (
+            {canSign && (
               <Link
                 href={`/wall/${slug}/sign`}
                 className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm transition-opacity hover:opacity-90"
@@ -130,6 +143,18 @@ export default function PublicWallPage() {
                 }}>
                 Sign This Wall ✍️
               </Link>
+            )}
+            {!canSign && (
+              <div
+                className="text-sm opacity-70"
+                style={{ color: primaryColor }}>
+                {windowNotStarted && "Signing opens soon."}
+                {windowClosed && "Signing is closed."}
+                {!windowNotStarted &&
+                  !windowClosed &&
+                  !wall.acceptingEntries &&
+                  "Signing is currently disabled."}
+              </div>
             )}
           </div>
         </div>

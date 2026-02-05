@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState, useEffect } from "react";
 import {
@@ -18,10 +18,17 @@ import { User, Mail, Shield, Trash2 } from "lucide-react";
 export default function SettingsPage() {
   const profile = useQuery(api.profiles.me);
   const updateProfile = useMutation(api.profiles.updateProfile);
+  const changePassword = useAction(api.account.changePassword);
 
   const [displayName, setDisplayName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -40,6 +47,45 @@ export default function SettingsPage() {
       console.error("Failed to update profile:", error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("All password fields are required");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      await changePassword({
+        currentPassword,
+        newPassword,
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordSuccess("Password updated successfully.");
+      setTimeout(() => setPasswordSuccess(null), 2500);
+    } catch (error) {
+      setPasswordError(
+        error instanceof Error ? error.message : "Failed to update password",
+      );
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -142,6 +188,76 @@ export default function SettingsPage() {
                 day: "numeric",
               })}
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Password */}
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-zinc-400" />
+            <CardTitle className="text-white">Password</CardTitle>
+          </div>
+          <CardDescription>Update your account password</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {passwordError && (
+            <div className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm">
+              {passwordError}
+            </div>
+          )}
+          {passwordSuccess && (
+            <div className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-3 text-emerald-200 text-sm">
+              {passwordSuccess}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="currentPassword" className="text-zinc-300">
+              Current Password
+            </Label>
+            <Input
+              id="currentPassword"
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="newPassword" className="text-zinc-300">
+              New Password
+            </Label>
+            <Input
+              id="newPassword"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword" className="text-zinc-300">
+              Confirm New Password
+            </Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={handleChangePassword}
+              disabled={isUpdatingPassword}>
+              {isUpdatingPassword ? "Updating..." : "Update Password"}
+            </Button>
           </div>
         </CardContent>
       </Card>

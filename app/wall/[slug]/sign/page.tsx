@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
@@ -49,6 +49,7 @@ export default function SignWallPage() {
   const [selectedStickers, setSelectedStickers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const handleSignatureChange = useCallback((dataUrl: string | null) => {
     setSignatureDataUrl(dataUrl);
@@ -69,6 +70,11 @@ export default function SignWallPage() {
     const res = await fetch(dataUrl);
     return res.blob();
   };
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +119,18 @@ export default function SignWallPage() {
       // Redirect back to wall
       router.push(`/wall/${slug}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to sign wall");
+      if (err instanceof Error) {
+        if (
+          err.message.includes("RATE_LIMITED") ||
+          err.message.includes("Too many entries")
+        ) {
+          setError("Too many entries from this email. Please wait a minute.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Failed to sign wall");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -148,14 +165,24 @@ export default function SignWallPage() {
   }
 
   // Wall not accepting entries
-  if (!wall.acceptingEntries) {
+  const windowNotStarted =
+    wall.entryWindowStart !== undefined && now < wall.entryWindowStart;
+  const windowClosed =
+    wall.entryWindowEnd !== undefined && now > wall.entryWindowEnd;
+
+  if (!wall.acceptingEntries || windowNotStarted || windowClosed) {
+    const message = windowNotStarted
+      ? "This memory wall is not yet accepting new signatures."
+      : windowClosed
+        ? "The entry window for this wall has closed."
+        : "This memory wall is no longer accepting new signatures.";
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-2">Wall Closed</h1>
-          <p className="text-zinc-400 mb-6">
-            This memory wall is no longer accepting new signatures.
-          </p>
+          <h1 className="text-2xl font-bold text-white mb-2">
+            Signing Unavailable
+          </h1>
+          <p className="text-zinc-400 mb-6">{message}</p>
           <Link
             href={`/wall/${slug}`}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-black bg-white hover:bg-zinc-200 transition-colors">

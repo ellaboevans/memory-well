@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { rateLimiter } from "./rateLimiter";
 
 // Entry validator for return types
 const entryValidator = v.object({
@@ -91,6 +92,22 @@ export const create = mutation({
         code: "WALL_CLOSED",
         message: "This wall is no longer accepting entries",
       });
+    }
+
+    if (args.email) {
+      const { ok, retryAfter } = await rateLimiter.limit(ctx, "entryByEmail", {
+        key: args.email,
+      });
+      if (!ok) {
+        throw new ConvexError({
+          code: "RATE_LIMITED",
+          message: retryAfter
+            ? `Too many entries from this email. Try again in ${Math.ceil(
+                retryAfter / 1000,
+              )} seconds.`
+            : "Too many entries from this email. Please wait a minute.",
+        });
+      }
     }
 
     // Check time window

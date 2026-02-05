@@ -27,6 +27,8 @@ Last Updated: February 3, 2026
 
 - [x] Sign up page
 - [x] Sign in page
+- [x] Email verification (Resend OTP)
+- [x] Password reset flow
 - [x] Protected dashboard routes
 - [x] Auth state management
 
@@ -39,6 +41,7 @@ Last Updated: February 3, 2026
 - [x] Edit wall page (settings & moderation)
 - [x] Billing page
 - [x] Settings page (profile update)
+- [x] Password change in settings
 
 ### Wall Features
 
@@ -53,6 +56,7 @@ Last Updated: February 3, 2026
   - [x] Live preview
 - [x] Cover image upload (Notion-style)
 - [x] Cover image removal
+- [x] Entry time window (open/close signing)
 
 ### Signature/Entry System
 
@@ -66,6 +70,7 @@ Last Updated: February 3, 2026
 - [x] Entry submission (name, message, signature)
 - [x] Entries display on wall page
 - [x] Entry timestamps
+- [x] Stickers/emojis (up to 3)
 
 ### Entry Moderation
 
@@ -97,17 +102,14 @@ Last Updated: February 3, 2026
 
 ### High Priority
 
-- [ ] **Stickers/Emojis** - Visitors can add decorative elements to signatures
 - [ ] **Analytics Dashboard** - Visitor counts, signature stats over time
-- [ ] **Time Window** - Open/close signing period for walls
-- [ ] **Rate Limiting** - Spam protection on public walls
+- [x] **Rate Limiting** - Spam protection on public walls (per email)
 
 ### Medium Priority
 
 - [ ] **Email Notifications** - Weekly/monthly activity digests for owners
 - [ ] **Verified Badge** - Email verification for visitor entries
 - [ ] **QR Code Generation** - Easy wall sharing for events
-- [ ] **Password Change** - In settings page
 
 ### Low Priority / Future
 

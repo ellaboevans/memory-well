@@ -203,8 +203,8 @@ export const update = mutation({
     theme: v.optional(themeValidator),
     visibility: v.optional(v.union(v.literal("private"), v.literal("public"))),
     acceptingEntries: v.optional(v.boolean()),
-    entryWindowStart: v.optional(v.number()),
-    entryWindowEnd: v.optional(v.number()),
+    entryWindowStart: v.optional(v.union(v.number(), v.null())),
+    entryWindowEnd: v.optional(v.union(v.number(), v.null())),
   },
   returns: v.null(),
   handler: async (ctx, args) => {

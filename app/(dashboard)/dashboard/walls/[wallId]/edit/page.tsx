@@ -8,6 +8,17 @@ import { useParams, useRouter } from "next/navigation";
 import { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { ChevronDownIcon } from "lucide-react";
+import { format } from "date-fns";
 
 const FONT_OPTIONS = [
   { value: "Geist", label: "Geist (Default)" },
@@ -25,6 +36,30 @@ const COLOR_PRESETS = [
   { name: "Rose", primary: "#f472b6", background: "#1f1218" },
   { name: "Lavender", primary: "#a78bfa", background: "#1e1b2e" },
 ];
+
+const toLocalDate = (timestamp: number) => {
+  const date = new Date(timestamp);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
+const toLocalTime = (timestamp: number) => {
+  const date = new Date(timestamp);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+const formatDisplayDate = (date?: Date) => {
+  if (!date) return "Pick a date";
+  return format(date, "PPP");
+};
+
+const combineDateTime = (date?: Date, time?: string) => {
+  if (!date) return null;
+  const [hours, minutes] = (time || "00:00").split(":").map(Number);
+  const combined = new Date(date);
+  combined.setHours(hours ?? 0, minutes ?? 0, 0, 0);
+  return combined.getTime();
+};
 
 export default function EditWallPage() {
   const params = useParams();
@@ -46,6 +81,17 @@ export default function EditWallPage() {
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
   const [acceptingEntries, setAcceptingEntries] = useState(true);
+  const [entryWindowEnabled, setEntryWindowEnabled] = useState(false);
+  const [entryWindowStartDate, setEntryWindowStartDate] = useState<
+    Date | undefined
+  >(undefined);
+  const [entryWindowStartTime, setEntryWindowStartTime] = useState("");
+  const [entryWindowEndDate, setEntryWindowEndDate] = useState<
+    Date | undefined
+  >(undefined);
+  const [entryWindowEndTime, setEntryWindowEndTime] = useState("");
+  const [startPickerOpen, setStartPickerOpen] = useState(false);
+  const [endPickerOpen, setEndPickerOpen] = useState(false);
 
   // Theme state
   const [primaryColor, setPrimaryColor] = useState("#ffffff");
@@ -69,6 +115,21 @@ export default function EditWallPage() {
       setDescription(wall.description ?? "");
       setVisibility(wall.visibility);
       setAcceptingEntries(wall.acceptingEntries);
+      setEntryWindowEnabled(
+        Boolean(wall.entryWindowStart || wall.entryWindowEnd),
+      );
+      setEntryWindowStartDate(
+        wall.entryWindowStart ? toLocalDate(wall.entryWindowStart) : undefined,
+      );
+      setEntryWindowStartTime(
+        wall.entryWindowStart ? toLocalTime(wall.entryWindowStart) : "",
+      );
+      setEntryWindowEndDate(
+        wall.entryWindowEnd ? toLocalDate(wall.entryWindowEnd) : undefined,
+      );
+      setEntryWindowEndTime(
+        wall.entryWindowEnd ? toLocalTime(wall.entryWindowEnd) : "",
+      );
       setPrimaryColor(wall.theme.primaryColor);
       setBackgroundColor(wall.theme.backgroundColor);
       setFontFamily(wall.theme.fontFamily);
@@ -84,6 +145,12 @@ export default function EditWallPage() {
         description !== (wall.description ?? "") ||
         visibility !== wall.visibility ||
         acceptingEntries !== wall.acceptingEntries ||
+        entryWindowEnabled !==
+          Boolean(wall.entryWindowStart || wall.entryWindowEnd) ||
+        combineDateTime(entryWindowStartDate, entryWindowStartTime) !==
+          (wall.entryWindowStart ?? null) ||
+        combineDateTime(entryWindowEndDate, entryWindowEndTime) !==
+          (wall.entryWindowEnd ?? null) ||
         primaryColor !== wall.theme.primaryColor ||
         backgroundColor !== wall.theme.backgroundColor ||
         fontFamily !== wall.theme.fontFamily ||
@@ -96,6 +163,11 @@ export default function EditWallPage() {
     description,
     visibility,
     acceptingEntries,
+    entryWindowEnabled,
+    entryWindowStartDate,
+    entryWindowStartTime,
+    entryWindowEndDate,
+    entryWindowEndTime,
     primaryColor,
     backgroundColor,
     fontFamily,
@@ -193,6 +265,19 @@ export default function EditWallPage() {
     setIsSubmitting(true);
 
     try {
+      const startMs = entryWindowEnabled
+        ? combineDateTime(entryWindowStartDate, entryWindowStartTime)
+        : null;
+      const endMs = entryWindowEnabled
+        ? combineDateTime(entryWindowEndDate, entryWindowEndTime)
+        : null;
+
+      if (startMs && endMs && endMs <= startMs) {
+        setError("End time must be after start time");
+        setIsSubmitting(false);
+        return;
+      }
+
       await updateWall({
         wallId,
         title: title.trim(),
@@ -200,6 +285,8 @@ export default function EditWallPage() {
         coverImageId: coverRemoved ? null : (coverImageId ?? undefined),
         visibility,
         acceptingEntries,
+        entryWindowStart: startMs,
+        entryWindowEnd: endMs,
         theme: {
           primaryColor,
           backgroundColor,
@@ -582,6 +669,136 @@ export default function EditWallPage() {
                 }`}
               />
             </button>
+          </div>
+
+          {/* Entry window */}
+          <div className="rounded-lg border border-zinc-700 p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-sm font-medium text-white">
+                  Entry window
+                </span>
+                <p className="text-xs text-zinc-500">
+                  Limit when visitors can sign this wall
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !entryWindowEnabled;
+                  setEntryWindowEnabled(next);
+                  if (!next) {
+                    setEntryWindowStartDate(undefined);
+                    setEntryWindowStartTime("");
+                    setEntryWindowEndDate(undefined);
+                    setEntryWindowEndTime("");
+                  }
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  entryWindowEnabled ? "bg-green-600" : "bg-zinc-600"
+                }`}>
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    entryWindowEnabled ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FieldGroup className="flex-row">
+                <Field>
+                  <FieldLabel htmlFor="entryWindowStartDate">Start</FieldLabel>
+                  <Popover
+                    open={startPickerOpen}
+                    onOpenChange={setStartPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        id="entryWindowStartDate"
+                        disabled={!entryWindowEnabled}
+                        className="w-full justify-between border-zinc-700 bg-zinc-800 text-white hover:bg-zinc-700">
+                        {formatDisplayDate(entryWindowStartDate)}
+                        <ChevronDownIcon />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto overflow-hidden p-0">
+                      <Calendar
+                        mode="single"
+                        selected={entryWindowStartDate}
+                        captionLayout="dropdown"
+                        defaultMonth={entryWindowStartDate}
+                        onSelect={(date) => {
+                          setEntryWindowStartDate(date);
+                          setStartPickerOpen(false);
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </Field>
+                <Field className="w-32">
+                  <FieldLabel htmlFor="entryWindowStartTime">Time</FieldLabel>
+                  <Input
+                    type="time"
+                    id="entryWindowStartTime"
+                    step="1"
+                    value={entryWindowStartTime}
+                    onChange={(e) => setEntryWindowStartTime(e.target.value)}
+                    disabled={!entryWindowEnabled || !entryWindowStartDate}
+                    className="bg-zinc-800 border-zinc-700 text-white appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                  />
+                </Field>
+              </FieldGroup>
+
+              <FieldGroup className="flex-row">
+                <Field>
+                  <FieldLabel htmlFor="entryWindowEndDate">End</FieldLabel>
+                  <Popover open={endPickerOpen} onOpenChange={setEndPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        id="entryWindowEndDate"
+                        disabled={!entryWindowEnabled}
+                        className="w-full justify-between border-zinc-700 bg-zinc-800 text-white hover:bg-zinc-700">
+                        {formatDisplayDate(entryWindowEndDate)}
+                        <ChevronDownIcon />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto overflow-hidden p-0">
+                      <Calendar
+                        mode="single"
+                        selected={entryWindowEndDate}
+                        captionLayout="dropdown"
+                        defaultMonth={entryWindowEndDate}
+                        onSelect={(date) => {
+                          setEntryWindowEndDate(date);
+                          setEndPickerOpen(false);
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </Field>
+                <Field className="w-32">
+                  <FieldLabel htmlFor="entryWindowEndTime">Time</FieldLabel>
+                  <Input
+                    type="time"
+                    id="entryWindowEndTime"
+                    step="1"
+                    value={entryWindowEndTime}
+                    onChange={(e) => setEntryWindowEndTime(e.target.value)}
+                    disabled={!entryWindowEnabled || !entryWindowEndDate}
+                    className="bg-zinc-800 border-zinc-700 text-white appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                  />
+                </Field>
+              </FieldGroup>
+            </div>
+            <p className="text-xs text-zinc-500">
+              Leave a field empty for no start or no end time.
+            </p>
           </div>
 
           {/* Submit */}
