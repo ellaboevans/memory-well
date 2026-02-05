@@ -25,7 +25,7 @@ importers:
         version: 0.3.2(convex@1.31.7(react@19.2.3))(react@19.2.3)
       '@polar-sh/nextjs':
         specifier: ^0.9.3
-        version: 0.9.3(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))
+        version: 0.9.3(next@16.1.6(@babel/core@7.29.0)(@playwright/test@1.58.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))
       '@types/qrcode':
         specifier: ^1.5.6
         version: 1.5.6
@@ -52,7 +52,7 @@ importers:
         version: 0.563.0(react@19.2.3)
       next:
         specifier: 16.1.6
-        version: 16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 16.1.6(@babel/core@7.29.0)(@playwright/test@1.58.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -90,6 +90,9 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.55.0
+        version: 1.58.1
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.18
@@ -892,6 +895,11 @@ packages:
 
   '@panva/hkdf@1.2.1':
     resolution: {integrity: sha512-6oclG6Y3PiDFcoyk8srjLfVKyMfVCKJ27JwNPViuXziFpmdz+MZnZN/aKY0JGXgYuO/VghU0jcOAZgWXZ1Dmrw==}
+
+  '@playwright/test@1.58.1':
+    resolution: {integrity: sha512-6LdVIUERWxQMmUSSQi0I53GgCBYgM2RpGngCPY7hSeju+VrKjq3lvs7HpJoPbDiY5QM5EYRtRX5fvrinnMAz3w==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   '@polar-sh/adapter-utils@0.4.3':
     resolution: {integrity: sha512-9xjOyaAVWRFaFZKkSdZr8J6i5LToUoFKeoczXCEu6+uxAhKmkjA3Qlc8otI4be1DSouWgrYB/VUGHOW7dIgCuQ==}
@@ -2801,6 +2809,11 @@ packages:
     resolution: {integrity: sha512-VWSRii4t0AFm6ixFFmLLx1t7wS1gh+ckoa84aOeapGum0h+EZd1EhEumSB+ZdDLnEPuucsVB9oB7cxJHap6Afg==}
     engines: {node: '>=14.14'}
 
+  fsevents@2.3.2:
+    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
 
@@ -3757,6 +3770,16 @@ packages:
   pkce-challenge@5.0.1:
     resolution: {integrity: sha512-wQ0b/W4Fr01qtpHlqSqspcj3EhBvimsdh0KlHhH8HRZnMsEa0ea2fTULOXOS9ccQr3om+GcGRk4e+isrZWV8qQ==}
     engines: {node: '>=16.20.0'}
+
+  playwright-core@1.58.1:
+    resolution: {integrity: sha512-bcWzOaTxcW+VOOGBCQgnaKToLJ65d6AqfLVKEWvexyS3AS6rbXl+xdpYRMGSRBClPvyj44njOWoxjNdL/H9UNg==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright@1.58.1:
+    resolution: {integrity: sha512-+2uTZHxSCcxjvGc5C891LrS1/NlxglGxzrC4seZiVjcYVQfUa87wBL6rTDqzGjuoWNjnBzRqKmF6zRYGMvQUaQ==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   pngjs@5.0.0:
     resolution: {integrity: sha512-40QW5YalBNfQo5yRYmiw7Yz6TKKVr3h6970B2YE+3fQpsWcrbj1PzJgxeJ19DRQjhMbKPIuMY8rFaXc8moolVw==}
@@ -5310,15 +5333,19 @@ snapshots:
 
   '@panva/hkdf@1.2.1': {}
 
+  '@playwright/test@1.58.1':
+    dependencies:
+      playwright: 1.58.1
+
   '@polar-sh/adapter-utils@0.4.3':
     dependencies:
       '@polar-sh/sdk': 0.42.5
 
-  '@polar-sh/nextjs@0.9.3(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))':
+  '@polar-sh/nextjs@0.9.3(next@16.1.6(@babel/core@7.29.0)(@playwright/test@1.58.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))':
     dependencies:
       '@polar-sh/adapter-utils': 0.4.3
       '@polar-sh/sdk': 0.42.5
-      next: 16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      next: 16.1.6(@babel/core@7.29.0)(@playwright/test@1.58.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
 
   '@polar-sh/sdk@0.42.5':
     dependencies:
@@ -7451,6 +7478,9 @@ snapshots:
       jsonfile: 6.2.0
       universalify: 2.0.1
 
+  fsevents@2.3.2:
+    optional: true
+
   function-bind@1.1.2: {}
 
   function.prototype.name@1.1.8:
@@ -8102,7 +8132,7 @@ snapshots:
 
   negotiator@1.0.0: {}
 
-  next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  next@16.1.6(@babel/core@7.29.0)(@playwright/test@1.58.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
       '@next/env': 16.1.6
       '@swc/helpers': 0.5.15
@@ -8121,6 +8151,7 @@ snapshots:
       '@next/swc-linux-x64-musl': 16.1.6
       '@next/swc-win32-arm64-msvc': 16.1.6
       '@next/swc-win32-x64-msvc': 16.1.6
+      '@playwright/test': 1.58.1
       sharp: 0.34.5
     transitivePeerDependencies:
       - '@babel/core'
@@ -8351,6 +8382,14 @@ snapshots:
   pify@3.0.0: {}
 
   pkce-challenge@5.0.1: {}
+
+  playwright-core@1.58.1: {}
+
+  playwright@1.58.1:
+    dependencies:
+      playwright-core: 1.58.1
+    optionalDependencies:
+      fsevents: 2.3.2
 
   pngjs@5.0.0: {}
 
