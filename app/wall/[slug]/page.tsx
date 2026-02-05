@@ -53,7 +53,7 @@ function CoverImage({ storageId }: { storageId: Id<"_storage"> }) {
 
 export default function PublicWallPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const slug = params?.slug as string;
 
   const wall = useQuery(api.walls.getBySlug, { slug });
   const entries = useQuery(

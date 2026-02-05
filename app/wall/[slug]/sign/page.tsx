@@ -36,7 +36,7 @@ function CoverImage({ storageId }: { storageId: Id<"_storage"> }) {
 export default function SignWallPage() {
   const params = useParams();
   const router = useRouter();
-  const slug = params.slug as string;
+  const slug = params?.slug as string;
 
   const wall = useQuery(api.walls.getBySlug, { slug });
   const createEntry = useMutation(api.entries.create);

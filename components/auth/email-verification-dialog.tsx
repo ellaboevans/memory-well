@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { api } from "@/convex/_generated/api";
 
 export function EmailVerificationDialog() {
   const status = useQuery(api.users.meVerificationStatus);
@@ -44,9 +44,10 @@ export function EmailVerificationDialog() {
     setIsSubmitting(true);
 
     try {
+      const normalizedCode = code.replace(/\s+/g, "").trim();
       await signIn("password", {
         email,
-        code,
+        code: normalizedCode,
         flow: "email-verification",
       });
       setCode("");
@@ -65,7 +66,11 @@ export function EmailVerificationDialog() {
     setIsSubmitting(true);
 
     try {
-      await signIn("resend-otp-verify", { email });
+      await signIn("password", {
+        email,
+        flow: "email-verification",
+      });
+      setCode("");
       setResendCooldown(30);
     } catch (err) {
       setError(

@@ -10,19 +10,22 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function PasswordResetForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
   const { signIn } = useAuthActions();
+  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [step, setStep] = useState<"request" | "verify">("request");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -56,16 +59,21 @@ export function PasswordResetForm({
     setIsLoading(true);
 
     try {
+      const normalizedCode = verificationCode.replace(/\s+/g, "").trim();
       await signIn("password", {
         email,
-        code: verificationCode,
+        code: normalizedCode,
         newPassword,
         flow: "reset-verification",
       });
       setStep("request");
       setVerificationCode("");
       setNewPassword("");
-      setSuccessMessage("Password updated. You can sign in now.");
+      setResendCooldown(0);
+      setSuccessMessage("Password updated. Redirecting to sign in...");
+      setTimeout(() => {
+        router.push("/sign-in");
+      }, 1500);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to reset your password",
@@ -74,6 +82,37 @@ export function PasswordResetForm({
       setIsLoading(false);
     }
   };
+
+  const handleResend = async () => {
+    if (resendCooldown > 0) return;
+    setError(null);
+    setSuccessMessage(null);
+    setIsLoading(true);
+
+    try {
+      await signIn("password", {
+        email,
+        flow: "reset",
+      });
+      setVerificationCode("");
+      setResendCooldown(30);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to resend reset code",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(
+      () => setResendCooldown((prev) => Math.max(0, prev - 1)),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   if (step === "verify") {
     return (
@@ -140,12 +179,27 @@ export function PasswordResetForm({
             <FieldDescription className="text-center">
               <button
                 type="button"
+                onClick={handleResend}
+                className="underline underline-offset-4"
+                disabled={isLoading || resendCooldown > 0}>
+                {resendCooldown > 0
+                  ? `Resend code in ${resendCooldown}s`
+                  : "Resend code"}
+              </button>
+            </FieldDescription>
+          </Field>
+
+          <Field>
+            <FieldDescription className="text-center">
+              <button
+                type="button"
                 onClick={() => {
                   setStep("request");
                   setError(null);
                   setSuccessMessage(null);
                   setVerificationCode("");
                   setNewPassword("");
+                  setResendCooldown(0);
                 }}
                 className="underline underline-offset-4">
                 Back

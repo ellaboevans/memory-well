@@ -28,6 +28,7 @@ export function LoginForm({
   const [verificationCode, setVerificationCode] = useState("");
   const [step, setStep] = useState<"sign-in" | "verify-email">("sign-in");
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -85,9 +86,10 @@ export function LoginForm({
     setIsLoading(true);
 
     try {
+      const normalizedCode = verificationCode.replace(/\s+/g, "").trim();
       const result = await signIn("password", {
         email: pendingEmail,
-        code: verificationCode,
+        code: normalizedCode,
         flow: "email-verification",
       });
 
@@ -104,6 +106,36 @@ export function LoginForm({
       setIsLoading(false);
     }
   };
+
+  const handleResend = async () => {
+    if (!pendingEmail || resendCooldown > 0) return;
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      await signIn("password", {
+        email: pendingEmail,
+        flow: "email-verification",
+      });
+      setVerificationCode("");
+      setResendCooldown(30);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to resend verification",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(
+      () => setResendCooldown((prev) => Math.max(0, prev - 1)),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   if (step === "verify-email") {
     return (
@@ -154,10 +186,25 @@ export function LoginForm({
             <FieldDescription className="text-center">
               <button
                 type="button"
+                onClick={handleResend}
+                className="underline underline-offset-4"
+                disabled={isLoading || resendCooldown > 0}>
+                {resendCooldown > 0
+                  ? `Resend code in ${resendCooldown}s`
+                  : "Resend code"}
+              </button>
+            </FieldDescription>
+          </Field>
+
+          <Field>
+            <FieldDescription className="text-center">
+              <button
+                type="button"
                 onClick={() => {
                   setStep("sign-in");
                   setError(null);
                   setVerificationCode("");
+                  setResendCooldown(0);
                 }}
                 className="underline underline-offset-4">
                 Back to sign in
