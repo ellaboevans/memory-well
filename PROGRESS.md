@@ -1,6 +1,6 @@
 # Memory Well - Development Progress
 
-Last Updated: February 3, 2026
+Last Updated: February 5, 2026
 
 ---
 
@@ -108,8 +108,8 @@ Last Updated: February 3, 2026
 
 ### Medium Priority
 
-- [ ] **Email Notifications** - Weekly/monthly activity digests for owners
-- [ ] **Verified Badge** - Email verification for visitor entries
+- [x] **Email Notifications** - Weekly/monthly activity digests for owners
+- [x] **Verified Badge** - Email verification for visitor entries
 - [x] **QR Code Generation** - Easy wall sharing for events
 
 ### Low Priority / Future
@@ -185,6 +185,11 @@ POLAR_WEBHOOK_SECRET=
 
 # App
 NEXT_PUBLIC_APP_URL=
+
+# Resend
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+RESEND_FROM_NAME=
 ```
 
 ---

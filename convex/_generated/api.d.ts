@@ -16,6 +16,7 @@ import type * as auth from "../auth.js";
 import type * as entries from "../entries.js";
 import type * as entryNotifications from "../entryNotifications.js";
 import type * as http from "../http.js";
+import type * as ownerDigests from "../ownerDigests.js";
 import type * as profiles from "../profiles.js";
 import type * as rateLimiter from "../rateLimiter.js";
 import type * as subscriptions from "../subscriptions.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   entries: typeof entries;
   entryNotifications: typeof entryNotifications;
   http: typeof http;
+  ownerDigests: typeof ownerDigests;
   profiles: typeof profiles;
   rateLimiter: typeof rateLimiter;
   subscriptions: typeof subscriptions;
@@ -71,6 +73,57 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
+  crons: {
+    public: {
+      del: FunctionReference<
+        "mutation",
+        "internal",
+        { identifier: { id: string } | { name: string } },
+        null
+      >;
+      get: FunctionReference<
+        "query",
+        "internal",
+        { identifier: { id: string } | { name: string } },
+        {
+          args: Record<string, any>;
+          functionHandle: string;
+          id: string;
+          name?: string;
+          schedule:
+            | { kind: "interval"; ms: number }
+            | { cronspec: string; kind: "cron"; tz?: string };
+        } | null
+      >;
+      list: FunctionReference<
+        "query",
+        "internal",
+        {},
+        Array<{
+          args: Record<string, any>;
+          functionHandle: string;
+          id: string;
+          name?: string;
+          schedule:
+            | { kind: "interval"; ms: number }
+            | { cronspec: string; kind: "cron"; tz?: string };
+        }>
+      >;
+      register: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          args: Record<string, any>;
+          functionHandle: string;
+          name?: string;
+          schedule:
+            | { kind: "interval"; ms: number }
+            | { cronspec: string; kind: "cron"; tz?: string };
+        },
+        string
+      >;
+    };
+  };
   rateLimiter: {
     lib: {
       checkRateLimit: FunctionReference<
