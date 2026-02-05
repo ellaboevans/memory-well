@@ -8,8 +8,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { SignaturePad } from "@/components/signature-pad";
 import { Id } from "@/convex/_generated/dataModel";
+import { z } from "zod";
 
 const STICKER_OPTIONS = ["❤️", "🎉", "🙏", "✨", "💐", "🥳", "💝", "🌟"];
+const signSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z
+    .string()
+    .trim()
+    .optional()
+    .refine((value) => !value || z.string().email().safeParse(value).success, {
+      message: "Enter a valid email address",
+    }),
+});
 
 // Component to display cover image
 function CoverImage({ storageId }: { storageId: Id<"_storage"> }) {
@@ -49,6 +60,7 @@ export default function SignWallPage() {
   const [selectedStickers, setSelectedStickers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [now, setNow] = useState(() => Date.now());
 
   const handleSignatureChange = useCallback((dataUrl: string | null) => {
@@ -82,6 +94,24 @@ export default function SignWallPage() {
 
     setIsSubmitting(true);
     setError(null);
+    setFieldErrors({});
+
+    const parsed = signSchema.safeParse({
+      name: name.trim(),
+      email: email.trim() || undefined,
+    });
+    if (!parsed.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === "string") {
+          nextErrors[key] = issue.message;
+        }
+      }
+      setFieldErrors(nextErrors);
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       let signatureImageId: Id<"_storage"> | undefined;
@@ -247,12 +277,18 @@ export default function SignWallPage() {
             <input
               type="text"
               id="name"
-              required
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="mt-1 block w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white placeholder-zinc-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
               placeholder="John Doe"
+              aria-invalid={Boolean(fieldErrors.name)}
+              aria-describedby={fieldErrors.name ? "name-error" : undefined}
             />
+            {fieldErrors.name && (
+              <p id="name-error" className="mt-1 text-xs text-red-400">
+                {fieldErrors.name}
+              </p>
+            )}
           </div>
 
           {/* Signature Pad */}
@@ -302,7 +338,14 @@ export default function SignWallPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1 block w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white placeholder-zinc-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
               placeholder="john@example.com"
+              aria-invalid={Boolean(fieldErrors.email)}
+              aria-describedby={fieldErrors.email ? "email-error" : undefined}
             />
+            {fieldErrors.email && (
+              <p id="email-error" className="mt-1 text-xs text-red-400">
+                {fieldErrors.email}
+              </p>
+            )}
             <p className="mt-1 text-xs text-zinc-500">
               For verification badge. Won&apos;t be displayed publicly.
             </p>
@@ -343,7 +386,7 @@ export default function SignWallPage() {
           <div className="pt-4">
             <button
               type="submit"
-              disabled={isSubmitting || !name.trim()}
+              disabled={isSubmitting}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity hover:opacity-90"
               style={{ backgroundColor: primaryColor, color: buttonTextColor }}>
               {isSubmitting ? "Signing..." : "Sign the Wall"}

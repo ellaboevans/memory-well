@@ -19,6 +19,11 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ChevronDownIcon, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
+import { z } from "zod";
+
+const editWallSchema = z.object({
+  title: z.string().min(2, "Title must be at least 2 characters"),
+});
 
 const FONT_OPTIONS = [
   { value: "Geist", label: "Geist (Default)" },
@@ -105,6 +110,7 @@ export default function EditWallPage() {
   const [coverRemoved, setCoverRemoved] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -256,9 +262,18 @@ export default function EditWallPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
-    if (!title.trim()) {
-      setError("Title is required");
+    const parsed = editWallSchema.safeParse({ title: title.trim() });
+    if (!parsed.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === "string") {
+          nextErrors[key] = issue.message;
+        }
+      }
+      setFieldErrors(nextErrors);
       return;
     }
 
@@ -338,11 +353,17 @@ export default function EditWallPage() {
             <input
               type="text"
               id="title"
-              required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="mt-1 block w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white placeholder-zinc-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+              aria-invalid={Boolean(fieldErrors.title)}
+              aria-describedby={fieldErrors.title ? "title-error" : undefined}
             />
+            {fieldErrors.title && (
+              <p id="title-error" className="mt-1 text-xs text-red-400">
+                {fieldErrors.title}
+              </p>
+            )}
           </div>
 
           {/* Slug (read-only) */}

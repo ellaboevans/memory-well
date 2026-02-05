@@ -19,6 +19,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Loader2 } from "lucide-react";
+import { z } from "zod";
+
+const createWallSchema = z.object({
+  title: z.string().min(2, "Title must be at least 2 characters"),
+  slug: z
+    .string()
+    .min(3, "URL slug must be at least 3 characters")
+    .regex(/^[a-z0-9-]+$/, "Slug can only use letters, numbers, and hyphens"),
+});
 
 function slugify(text: string): string {
   return text
@@ -46,6 +55,7 @@ export function CreateWallDialog({ children }: CreateWallDialogProps) {
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canCreateMore = profile?.tier === "premium" || (walls?.length ?? 0) < 3;
@@ -76,19 +86,21 @@ export function CreateWallDialog({ children }: CreateWallDialogProps) {
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
-    if (!title.trim()) {
-      setError("Title is required");
-      return;
-    }
-
-    if (!slug.trim()) {
-      setError("URL slug is required");
-      return;
-    }
-
-    if (slug.length < 3) {
-      setError("URL slug must be at least 3 characters");
+    const parsed = createWallSchema.safeParse({
+      title: title.trim(),
+      slug: slug.trim(),
+    });
+    if (!parsed.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === "string") {
+          nextErrors[key] = issue.message;
+        }
+      }
+      setFieldErrors(nextErrors);
       return;
     }
 
@@ -194,7 +206,14 @@ export function CreateWallDialog({ children }: CreateWallDialogProps) {
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Sarah & John's Wedding"
                 className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                aria-invalid={Boolean(fieldErrors.title)}
+                aria-describedby={fieldErrors.title ? "title-error" : undefined}
               />
+              {fieldErrors.title && (
+                <p id="title-error" className="text-xs text-red-400">
+                  {fieldErrors.title}
+                </p>
+              )}
             </div>
 
             {/* Slug */}
@@ -212,12 +231,19 @@ export function CreateWallDialog({ children }: CreateWallDialogProps) {
                   onChange={(e) => handleSlugChange(e.target.value)}
                   placeholder="sarah-john-wedding"
                   className="rounded-l-none bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                  aria-invalid={Boolean(fieldErrors.slug)}
+                  aria-describedby={fieldErrors.slug ? "slug-error" : undefined}
                 />
               </div>
               <p className="text-xs text-zinc-500">
                 Only lowercase letters, numbers, and hyphens. Cannot be changed
                 later.
               </p>
+              {fieldErrors.slug && (
+                <p id="slug-error" className="text-xs text-red-400">
+                  {fieldErrors.slug}
+                </p>
+              )}
             </div>
 
             {/* Description */}
@@ -254,9 +280,7 @@ export function CreateWallDialog({ children }: CreateWallDialogProps) {
               disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || !title.trim() || !slug.trim()}>
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -14,6 +14,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { api } from "@/convex/_generated/api";
+import { z } from "zod";
+
+const verifySchema = z.object({
+  code: z.string().trim().min(8, "Verification code must be 8 characters"),
+});
 
 export function EmailVerificationDialog() {
   const status = useQuery(api.users.meVerificationStatus);
@@ -21,6 +26,7 @@ export function EmailVerificationDialog() {
 
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -41,6 +47,21 @@ export function EmailVerificationDialog() {
     if (!email) return;
 
     setError(null);
+    setFieldErrors({});
+
+    const parsed = verifySchema.safeParse({ code });
+    if (!parsed.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === "string") {
+          nextErrors[key] = issue.message;
+        }
+      }
+      setFieldErrors(nextErrors);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -120,9 +141,17 @@ export function EmailVerificationDialog() {
               placeholder="Enter the 8-digit code"
               className="mt-2 bg-zinc-800 border-zinc-700 text-white"
               autoComplete="one-time-code"
-              required
               disabled={isSubmitting}
+              aria-invalid={Boolean(fieldErrors.code)}
+              aria-describedby={
+                fieldErrors.code ? "verify-code-error" : undefined
+              }
             />
+            {fieldErrors.code && (
+              <p id="verify-code-error" className="mt-2 text-xs text-red-400">
+                {fieldErrors.code}
+              </p>
+            )}
           </div>
 
           <DialogFooter>
