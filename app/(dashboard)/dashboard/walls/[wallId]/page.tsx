@@ -39,6 +39,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import QRCode from "qrcode";
+import Image from "next/image";
 
 export default function WallDetailPage() {
   const params = useParams();
@@ -413,7 +414,7 @@ export default function WallDetailPage() {
       </div>
 
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white sm:max-w-2xl">
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Download QR Code</DialogTitle>
             <DialogDescription className="text-zinc-400">
@@ -427,7 +428,15 @@ export default function WallDetailPage() {
             )}
             {qrError && <div className="text-red-400 text-sm">{qrError}</div>}
             {!isGeneratingQr && !qrError && qrDataUrl && (
-              <img src={qrDataUrl} alt="Wall QR code" className="h-48 w-48" />
+              <Image
+                src={qrDataUrl}
+                alt="Wall QR code"
+                width={2000}
+                height={2000}
+                loading="eager"
+                decoding="async"
+                className="h-48 w-48"
+              />
             )}
           </div>
 
