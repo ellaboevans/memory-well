@@ -33,66 +33,53 @@ The SPEC mentions "Convex serverless backend" + "PostgreSQL database" — but **
 
 ---
 
-## 3. Directory Structure
+## 3. Directory Structure (Actual)
 
 ```
 sign-dria/
 ├── app/                          # Next.js App Router
-│   ├── (marketing)/              # Public pages (landing, about)
-│   │   ├── page.tsx
-│   │   └── layout.tsx
-│   ├── (auth)/                   # Auth pages
-│   │   ├── sign-in/
-│   │   └── sign-up/
+│   ├── (marketing)/              # Public pages
+│   ├── (auth)/                   # Auth pages (sign-in, sign-up, forgot-password)
 │   ├── (dashboard)/              # Owner dashboard (protected)
 │   │   ├── layout.tsx
-│   │   ├── page.tsx              # Dashboard home
-│   │   └── walls/
-│   │       ├── page.tsx          # List walls
-│   │       ├── new/page.tsx      # Create wall
-│   │       └── [wallId]/         # Wall detail/edit
-│   ├── w/[slug]/                 # Public wall view (visitor signing)
+│   │   └── dashboard/
+│   │       ├── page.tsx          # Dashboard home
+│   │       ├── billing/page.tsx
+│   │       ├── settings/page.tsx
+│   │       └── walls/
+│   │           ├── page.tsx      # List walls
+│   │           └── [wallId]/     # Wall detail/edit/export
+│   ├── wall/[slug]/              # Public wall view + sign flow
 │   │   ├── page.tsx
-│   │   └── success/page.tsx
-│   ├── api/                      # Route handlers (webhooks, exports)
+│   │   ├── sign/page.tsx
+│   │   └── layout.tsx
+│   ├── api/                      # Route handlers (Polar webhooks/checkout)
 │   └── layout.tsx                # Root layout
 │
 ├── convex/                       # Convex backend
 │   ├── _generated/               # Auto-generated types
 │   ├── schema.ts                 # Database schema
-│   ├── auth.ts                   # Auth config
+│   ├── auth.ts                   # Auth config (Convex Auth)
 │   ├── users.ts                  # User queries/mutations
 │   ├── walls.ts                  # Wall CRUD
-│   ├── entries.ts                # Entry (signature) CRUD
-│   ├── subscriptions.ts          # Billing logic
+│   ├── entries.ts                # Entry CRUD + moderation
+│   ├── analytics.ts              # Dashboard analytics
+│   ├── subscriptions.ts          # Polar billing logic
+│   ├── account.ts                # Password change
+│   ├── ownerDigests.ts           # Owner digest emails + crons
+│   ├── entryNotifications.ts     # Entry verification emails
 │   └── http.ts                   # HTTP actions (webhooks)
 │
 ├── lib/                          # Shared utilities
-│   ├── convex.ts                 # Convex client setup
-│   ├── validators.ts             # Shared Zod/Convex validators
-│   └── constants.ts              # App-wide constants
+│   ├── config.ts                 # URL helpers
+│   └── utils.ts                  # Utility helpers
 │
 ├── components/
-│   ├── ui/                       # Base UI primitives (existing)
-│   ├── walls/                    # Wall-specific components
-│   │   ├── WallCard.tsx
-│   │   ├── WallEditor.tsx
-│   │   └── EntryCard.tsx
-│   ├── signature/                # Signature capture
-│   │   ├── SignaturePad.tsx
-│   │   └── StickerPicker.tsx
-│   └── layout/                   # Layout components
-│       ├── Header.tsx
-│       ├── Sidebar.tsx
-│       └── Footer.tsx
-│
-├── hooks/                        # Custom React hooks
-│   ├── useWall.ts
-│   ├── useEntries.ts
-│   └── useSubscription.ts
-│
-└── types/                        # TypeScript types
-    └── index.ts
+│   ├── ui/                       # Base UI primitives
+│   ├── auth/                     # Auth UI + dialogs
+│   ├── dashboard/                # Dashboard UI
+│   ├── export/                   # Export preview
+│   └── signature-pad.tsx         # Signature capture
 ```
 
 ---
@@ -104,9 +91,9 @@ sign-dria/
 | **Auth**              | Clerk, NextAuth, Convex Auth             | **Convex Auth**            | Native integration, no extra service, built-in session management |
 | **Real-time**         | Polling, WebSockets, Convex              | **Convex subscriptions**   | Zero config, automatic cache invalidation                         |
 | **File Storage**      | S3, Cloudinary, Convex                   | **Convex File Storage**    | Integrated, no CORS issues, automatic CDN                         |
-| **Signature Capture** | Fabric.js, Signature Pad, Canvas API     | **react-signature-canvas** | Lightweight, touch-friendly, outputs base64/blob                  |
-| **Export (PDF)**      | Puppeteer, react-pdf, jsPDF              | **@react-pdf/renderer**    | Server-side rendering, styled components                          |
-| **Payments**          | Stripe, Paystack                         | **Paystack**               | Spec requirement (Ghana support)                                  |
+| **Signature Capture** | Fabric.js, Signature Pad, Canvas API     | **signature_pad**          | Lightweight, touch-friendly, outputs base64/blob                  |
+| **Export (PDF)**      | Puppeteer, react-pdf, jsPDF              | **jsPDF + html2canvas**    | Client-side export with preview                                   |
+| **Payments**          | Stripe, Paystack, Polar                  | **Polar**                  | One-time lifetime upgrade flow                                    |
 | **Styling**           | CSS Modules, Tailwind, styled-components | **Tailwind v4**            | Already set up, utility-first, great DX                           |
 | **State**             | Redux, Zustand, Convex                   | **Convex + React Context** | Convex handles server state; Context for UI state                 |
 
@@ -203,27 +190,30 @@ For premium users wanting `guestbook.sarahswedding.com`:
 | **High-traffic walls**      | Convex handles read scaling automatically; entries paginated      |
 | **Large entry counts**      | Cursor-based pagination, indexes on `wallId + createdAt`          |
 | **Image/signature storage** | Convex File Storage with automatic CDN                            |
-| **Export generation**       | Background job via Convex actions (async, non-blocking)           |
-| **Rate limiting**           | Convex built-in rate limiting + custom throttle on entry creation |
+| **Export generation**       | Client-side export via jsPDF + html2canvas                        |
+| **Rate limiting**           | Convex rate-limiter component (per email)                         |
 | **Multi-tenancy**           | All queries scoped by `ownerId`; row-level security patterns      |
 
 ---
 
-## 6. Convex Schema
+## 6. Convex Schema (Actual)
 
 ```typescript
 // convex/schema.ts
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
-  users: defineTable({
-    email: v.string(),
+  ...authTables,
+
+  profiles: defineTable({
+    userId: v.id("users"),
     name: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
     tier: v.union(v.literal("free"), v.literal("premium")),
     createdAt: v.number(),
-  }).index("by_email", ["email"]),
+  }).index("by_user", ["userId"]),
 
   walls: defineTable({
     ownerId: v.id("users"),
@@ -251,6 +241,7 @@ export default defineSchema({
     message: v.optional(v.string()),
     signatureImageId: v.optional(v.id("_storage")),
     stickers: v.optional(v.array(v.string())),
+    email: v.optional(v.string()),
     isVerified: v.boolean(),
     isHidden: v.boolean(),
     createdAt: v.number(),
@@ -260,12 +251,13 @@ export default defineSchema({
 
   subscriptions: defineTable({
     userId: v.id("users"),
-    paystackCustomerId: v.string(),
-    paystackSubscriptionId: v.optional(v.string()),
+    polarCustomerId: v.string(),
+    polarOrderId: v.optional(v.string()),
     status: v.union(
       v.literal("active"),
       v.literal("cancelled"),
       v.literal("past_due"),
+      v.literal("trialing"),
     ),
     currentPeriodEnd: v.optional(v.number()),
     createdAt: v.number(),
@@ -285,7 +277,7 @@ export default defineSchema({
 | **4. Theming**    | Wall customization UI, live preview               | Owners personalize walls               |
 | **5. Moderation** | Hide/delete entries, verification badges          | Owner moderation tools                 |
 | **6. Export**     | PDF/image generation                              | Downloadable wall exports              |
-| **7. Billing**    | Paystack integration, subscription management     | Freemium enforcement                   |
+| **7. Billing**    | Polar integration, lifetime upgrade               | Freemium enforcement                   |
 | **8. Polish**     | Analytics, notifications, SEO                     | Production readiness                   |
 
 ---
@@ -299,39 +291,44 @@ export default defineSchema({
 
 ---
 
-## 9. Dependencies to Add
+## 9. Dependencies (Actual)
 
 ```bash
 # Convex
-pnpm add convex @convex-dev/auth
+pnpm add convex @convex-dev/auth @convex-dev/rate-limiter @convex-dev/crons
 
 # Signature capture
-pnpm add react-signature-canvas
-pnpm add -D @types/react-signature-canvas
+pnpm add signature_pad
 
 # PDF export
-pnpm add @react-pdf/renderer
+pnpm add jspdf html2canvas
 
 # Paystack
-pnpm add @paystack/inline-js
+pnpm add @polar-sh/nextjs
 
 # Utilities
-pnpm add nanoid slugify date-fns
+pnpm add date-fns qrcode
 ```
 
 ---
 
-## 10. Environment Variables
+## 10. Environment Variables (Actual)
 
 ```env
 # Convex
 CONVEX_DEPLOYMENT=
 NEXT_PUBLIC_CONVEX_URL=
+NEXT_PUBLIC_CONVEX_SITE_URL=
 
-# Paystack
-PAYSTACK_SECRET_KEY=
-NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=
+# Polar
+POLAR_ACCESS_TOKEN=
+POLAR_WEBHOOK_SECRET=
 
 # App
 NEXT_PUBLIC_APP_URL=
+
+# Resend
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+RESEND_FROM_NAME=
 ```

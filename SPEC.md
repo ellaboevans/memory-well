@@ -74,24 +74,24 @@ The core philosophy is integrity-focused: visitor entries are immutable once sub
    • Freemium model:
    • Free tier: up to 3 walls, basic theming, no analytics/export.
    • Premium tier: additional walls, full theming, analytics, export options, verified badge support.
-   • Payment provider: Paystack (supports Ghanaian users).
-   • Subscription-based access for extra walls and premium features.
+   • Payment provider: Polar.
+   • One-time lifetime upgrade (no subscriptions).
 
 ⸻
 
 5. Tech Stack
    • Frontend: Mobile-first, responsive web app.
    • Backend: Convex serverless backend.
-   • Database: PostgreSQL.
-   • Signature capture: Canvas-based, touch-friendly.
-   • Export generation: PDF/image rendering library.
+   • Database: Convex document database.
+   • Signature capture: Canvas-based, touch-friendly (signature_pad).
+   • Export generation: jsPDF + html2canvas.
 
 ⸻
 
 6. Security & Privacy
    • Encryption in transit and at rest.
    • Optional visitor emails stored securely, GDPR/POPIA compliant.
-   • Rate-limiting and spam protection for visitor entries.
+   • Rate-limiting and spam protection for visitor entries (per email).
    • Owner authentication via secure email/password (future: passwordless/social login).
    • Integrity-focused: visitor entries immutable, owner moderation only.
 
