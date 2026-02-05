@@ -17,13 +17,13 @@ function SignatureImage({ storageId }: { storageId: Id<"_storage"> }) {
   }
 
   return (
-    <div className="mt-3 bg-zinc-800 rounded-lg p-2 inline-block">
+    <div className="mt-3 w-full rounded-lg bg-zinc-800 p-2">
       <Image
         src={url}
         alt="Signature"
-        width={200}
-        height={80}
-        className="max-h-20 w-auto"
+        width={600}
+        height={240}
+        className="h-auto max-h-24 w-full object-contain"
         unoptimized
       />
     </div>
