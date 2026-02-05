@@ -214,12 +214,19 @@ export default function PublicWallPage() {
                     </div>
                     {entry.isVerified && (
                       <span
-                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                        style={{
-                          backgroundColor: `${primaryColor}20`,
-                          color: primaryColor,
-                        }}>
-                        ✓ Verified
+                        className="inline-flex items-center rounded-full bg-blue-600/20 p-1.5 text-blue-300"
+                        aria-label="Verified">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6 fill-current">
+                          <path d="M12 2l1.8 2.3 2.9-.3.7 2.8 2.8.7-.3 2.9L22 12l-2.3 1.8.3 2.9-2.8.7-.7 2.8-2.9-.3L12 22l-1.8-2.3-2.9.3-.7-2.8-2.8-.7.3-2.9L2 12l2.3-1.8-.3-2.9 2.8-.7.7-2.8 2.9.3L12 2z" />
+                          <path
+                            className="text-blue-50"
+                            d="M10.2 13.6l-1.8-1.8-1.2 1.2 3 3 6-6-1.2-1.2-4.8 4.8z"
+                            fill="currentColor"
+                          />
+                        </svg>
                       </span>
                     )}
                   </div>

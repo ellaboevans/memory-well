@@ -14,7 +14,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreateWallDialog } from "@/components/dashboard/create-wall-dialog";
-import { Layers, Plus, TrendingUp, Crown, ExternalLink } from "lucide-react";
+import {
+  Layers,
+  Plus,
+  TrendingUp,
+  Crown,
+  ExternalLink,
+  ArrowRight,
+} from "lucide-react";
 import {
   ChartContainer,
   ChartTooltip,
@@ -184,8 +191,9 @@ export default function DashboardPage() {
             {profile?.tier !== "premium" && (
               <Link
                 href="/dashboard/billing"
-                className="text-xs text-blue-400 hover:text-blue-300 mt-1 inline-block">
-                Upgrade to premium →
+                className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1">
+                Upgrade to premium
+                <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             )}
           </CardContent>

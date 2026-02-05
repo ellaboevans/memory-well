@@ -17,7 +17,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 
 const FONT_OPTIONS = [
@@ -306,8 +306,9 @@ export default function EditWallPage() {
       <div className="mb-6">
         <Link
           href={`/dashboard/walls/${wallId}`}
-          className="text-sm text-zinc-400 hover:text-white transition-colors">
-          ← Back to Wall
+          className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Wall
         </Link>
       </div>
 

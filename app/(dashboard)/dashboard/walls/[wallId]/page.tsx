@@ -8,7 +8,15 @@ import { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import {
+  Check,
+  ArrowLeft,
+  ExternalLink,
+  BadgeCheck,
+  Eye,
+  EyeOff,
+  Trash2,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +32,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import QRCode from "qrcode";
 
 export default function WallDetailPage() {
@@ -171,8 +185,20 @@ export default function WallDetailPage() {
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-white">{entry.name}</h3>
                   {entry.isVerified && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900/50 text-blue-400">
-                      ✓ Verified
+                    <span
+                      className="inline-flex items-center rounded-full bg-blue-600/20 p-1.5 text-blue-300"
+                      aria-label="Verified">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        className="h-6 w-6 fill-current">
+                        <path d="M12 2l1.8 2.3 2.9-.3.7 2.8 2.8.7-.3 2.9L22 12l-2.3 1.8.3 2.9-2.8.7-.7 2.8-2.9-.3L12 22l-1.8-2.3-2.9.3-.7-2.8-2.8-.7.3-2.9L2 12l2.3-1.8-.3-2.9 2.8-.7.7-2.8 2.9.3L12 2z" />
+                        <path
+                          className="text-blue-50"
+                          d="M10.2 13.6l-1.8-1.8-1.2 1.2 3 3 6-6-1.2-1.2-4.8 4.8z"
+                          fill="currentColor"
+                        />
+                      </svg>
                     </span>
                   )}
                   {entry.isHidden && (
@@ -201,30 +227,63 @@ export default function WallDetailPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2 ml-4">
-                <button
-                  onClick={() => toggleVerified({ entryId: entry._id })}
-                  className="p-2 text-zinc-400 hover:text-white transition-colors"
-                  title={
-                    entry.isVerified
-                      ? "Remove verification"
-                      : "Mark as verified"
-                  }>
-                  {entry.isVerified ? "✓" : "○"}
-                </button>
-                <button
-                  onClick={() => toggleHidden({ entryId: entry._id })}
-                  className="p-2 text-zinc-400 hover:text-white transition-colors"
-                  title={entry.isHidden ? "Show entry" : "Hide entry"}>
-                  {entry.isHidden ? "👁" : "👁‍🗨"}
-                </button>
-                <button
-                  onClick={() => setDeletingEntryId(entry._id)}
-                  className="p-2 text-zinc-400 hover:text-red-400 transition-colors"
-                  title="Delete entry">
-                  🗑
-                </button>
-              </div>
+              <TooltipProvider>
+                <div className="flex gap-2 ml-4">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => toggleVerified({ entryId: entry._id })}
+                        className="p-2 text-zinc-400 hover:text-blue-400 transition-colors"
+                        aria-label={
+                          entry.isVerified
+                            ? "Remove verification"
+                            : "Mark as verified"
+                        }>
+                        <BadgeCheck
+                          className={`h-5 w-5 ${
+                            entry.isVerified ? "text-blue-400" : ""
+                          }`}
+                        />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {entry.isVerified
+                        ? "Remove verification"
+                        : "Mark as verified"}
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => toggleHidden({ entryId: entry._id })}
+                        className="p-2 text-zinc-400 hover:text-white transition-colors"
+                        aria-label={
+                          entry.isHidden ? "Show entry" : "Hide entry"
+                        }>
+                        {entry.isHidden ? (
+                          <Eye className="h-5 w-5" />
+                        ) : (
+                          <EyeOff className="h-5 w-5" />
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {entry.isHidden ? "Show entry" : "Hide entry"}
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setDeletingEntryId(entry._id)}
+                        className="p-2 text-zinc-400 hover:text-red-400 transition-colors"
+                        aria-label="Delete entry">
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete entry</TooltipContent>
+                  </Tooltip>
+                </div>
+              </TooltipProvider>
             </div>
           </div>
         ))}
@@ -239,8 +298,9 @@ export default function WallDetailPage() {
         <div>
           <Link
             href="/dashboard"
-            className="text-sm text-zinc-400 hover:text-white transition-colors">
-            ← Back to Dashboard
+            className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
           </Link>
           <h1 className="mt-2 text-2xl font-bold text-white">{wall.title}</h1>
           <p className="mt-1 text-zinc-400">
@@ -248,8 +308,9 @@ export default function WallDetailPage() {
               href={`https://${wallUrl}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-white transition-colors">
-              {wallUrl} ↗
+              className="inline-flex items-center gap-1 hover:text-white transition-colors">
+              {wallUrl}
+              <ExternalLink className="h-3.5 w-3.5" />
             </a>
           </p>
         </div>

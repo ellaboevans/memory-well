@@ -9,6 +9,7 @@ import Link from "next/link";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { ExportWallPreview } from "@/components/export/ExportWallPreview";
+import { ArrowLeft } from "lucide-react";
 
 type ExportFormat = "pdf" | "png" | "jpg";
 type ExportLayout = "grid" | "list";
@@ -133,8 +134,9 @@ export default function ExportWallPage() {
       <div className="mb-6">
         <Link
           href={`/dashboard/walls/${wallId}`}
-          className="text-sm text-zinc-400 hover:text-white transition-colors">
-          ← Back to Wall
+          className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Wall
         </Link>
       </div>
 

@@ -6,7 +6,7 @@ import { getWallUrl, getWallDisplayUrl } from "@/lib/config";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CreateWallDialog } from "@/components/dashboard/create-wall-dialog";
-import { Plus } from "lucide-react";
+import { Plus, ExternalLink, ArrowRight } from "lucide-react";
 
 export default function WallsListPage() {
   const walls = useQuery(api.walls.listMyWalls);
@@ -83,8 +83,9 @@ export default function WallsListPage() {
                     href={getWallUrl(wall.slug)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-zinc-400 hover:text-white">
-                    {getWallDisplayUrl(wall.slug)} ↗
+                    className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-white">
+                    {getWallDisplayUrl(wall.slug)}
+                    <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -110,8 +111,9 @@ export default function WallsListPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <Link
                     href={`/dashboard/walls/${wall._id}`}
-                    className="text-zinc-400 hover:text-white">
-                    View →
+                    className="inline-flex items-center gap-1 text-zinc-400 hover:text-white">
+                    View
+                    <ArrowRight className="h-4 w-4" />
                   </Link>
                 </td>
               </tr>
