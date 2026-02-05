@@ -8,11 +8,14 @@
  * @module
  */
 
+import type * as ResendOTP from "../ResendOTP.js";
+import type * as ResendOTPPasswordReset from "../ResendOTPPasswordReset.js";
 import type * as auth from "../auth.js";
 import type * as entries from "../entries.js";
 import type * as http from "../http.js";
 import type * as profiles from "../profiles.js";
 import type * as subscriptions from "../subscriptions.js";
+import type * as users from "../users.js";
 import type * as walls from "../walls.js";
 
 import type {
@@ -22,11 +25,14 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  ResendOTP: typeof ResendOTP;
+  ResendOTPPasswordReset: typeof ResendOTPPasswordReset;
   auth: typeof auth;
   entries: typeof entries;
   http: typeof http;
   profiles: typeof profiles;
   subscriptions: typeof subscriptions;
+  users: typeof users;
   walls: typeof walls;
 }>;
 

@@ -25,6 +25,8 @@ export function SignupForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [step, setStep] = useState<"sign-up" | "verify-email">("sign-up");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -45,19 +47,113 @@ export function SignupForm({
     setIsLoading(true);
 
     try {
-      await signIn("password", {
+      const result = await signIn("password", {
         email,
         password,
         name,
         flow: "signUp",
       });
-      router.push("/dashboard");
+      if (result.signingIn) {
+        router.push("/dashboard");
+        return;
+      }
+
+      setStep("verify-email");
+      setVerificationCode("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account");
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleVerify = async (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const result = await signIn("password", {
+        email,
+        code: verificationCode,
+        flow: "email-verification",
+      });
+
+      if (result.signingIn) {
+        router.push("/dashboard");
+      } else {
+        setError("Verification failed. Please try again.");
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to verify your email",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (step === "verify-email") {
+    return (
+      <form
+        className={cn("flex flex-col gap-6", className)}
+        onSubmit={handleVerify}
+        {...props}>
+        <FieldGroup>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <h1 className="text-2xl font-bold">Verify your email</h1>
+            <p className="text-muted-foreground text-sm text-balance">
+              We sent a verification code to{" "}
+              <span className="font-medium text-foreground">{email}</span>
+            </p>
+          </div>
+
+          {error && (
+            <div className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm">
+              {error}
+            </div>
+          )}
+
+          <Field>
+            <FieldLabel htmlFor="verificationCode">
+              Verification code
+            </FieldLabel>
+            <Input
+              id="verificationCode"
+              type="text"
+              placeholder="Enter the 8-digit code"
+              required
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              disabled={isLoading}
+              autoComplete="one-time-code"
+            />
+          </Field>
+
+          <Field>
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? "Verifying..." : "Verify and continue"}
+            </Button>
+          </Field>
+
+          <Field>
+            <FieldDescription className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("sign-up");
+                  setError(null);
+                  setVerificationCode("");
+                }}
+                className="underline underline-offset-4">
+                Back to sign up
+              </button>
+            </FieldDescription>
+          </Field>
+        </FieldGroup>
+      </form>
+    );
+  }
 
   return (
     <form

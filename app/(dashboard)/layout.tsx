@@ -8,6 +8,7 @@ import {
   DashboardSidebar,
   DashboardHeader,
 } from "@/components/dashboard/sidebar";
+import { EmailVerificationDialog } from "@/components/auth/email-verification-dialog";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -52,6 +53,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
+      <EmailVerificationDialog />
       <div className="flex h-screen">
         {/* Desktop sidebar - fixed */}
         <div className="hidden lg:flex lg:shrink-0">

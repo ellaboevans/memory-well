@@ -10,121 +10,94 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth } from "convex/react";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
 
-export function LoginForm({
+export function PasswordResetForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
   const { signIn } = useAuthActions();
-  const { isAuthenticated } = useConvexAuth();
-  const router = useRouter();
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
-  const [step, setStep] = useState<"sign-in" | "verify-email">("sign-in");
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [step, setStep] = useState<"request" | "verify">("request");
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/dashboard");
-    }
-  }, [isAuthenticated, router]);
-
-  const handleSubmit = async (e: React.SyntheticEvent) => {
+  const handleRequestReset = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMessage(null);
     setIsLoading(true);
 
     try {
-      const result = await signIn("password", {
+      await signIn("password", {
         email,
-        password,
-        flow: "signIn",
+        flow: "reset",
       });
-      if (result.signingIn) {
-        router.push("/dashboard");
-        return;
-      }
-
-      setPendingEmail(email);
-      setStep("verify-email");
-      setVerificationCode("");
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-
-      if (
-        errorMessage.includes("InvalidAccountId") ||
-        errorMessage.includes("Could not find")
-      ) {
-        setError("No account found with this email. Please sign up first.");
-      } else if (
-        errorMessage.includes("InvalidSecret") ||
-        errorMessage.includes("password")
-      ) {
-        setError("Incorrect password. Please try again.");
-      } else {
-        setError("Invalid email or password. Please try again.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerify = async (e: React.SyntheticEvent) => {
-    e.preventDefault();
-    if (!pendingEmail) return;
-
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      const result = await signIn("password", {
-        email: pendingEmail,
-        code: verificationCode,
-        flow: "email-verification",
-      });
-
-      if (result.signingIn) {
-        router.push("/dashboard");
-      } else {
-        setError("Verification failed. Please try again.");
-      }
+      setStep("verify");
+      setSuccessMessage(null);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to verify your email",
+        err instanceof Error ? err.message : "Failed to request reset code",
       );
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (step === "verify-email") {
+  const handleVerifyReset = async (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+    setIsLoading(true);
+
+    try {
+      await signIn("password", {
+        email,
+        code: verificationCode,
+        newPassword,
+        flow: "reset-verification",
+      });
+      setStep("request");
+      setVerificationCode("");
+      setNewPassword("");
+      setSuccessMessage("Password updated. You can sign in now.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to reset your password",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (step === "verify") {
     return (
       <form
         className={cn("flex flex-col gap-6", className)}
-        onSubmit={handleVerify}
+        onSubmit={handleVerifyReset}
         {...props}>
         <FieldGroup>
           <div className="flex flex-col items-center gap-1 text-center">
-            <h1 className="text-2xl font-bold">Check your email</h1>
+            <h1 className="text-2xl font-bold">Reset your password</h1>
             <p className="text-muted-foreground text-sm text-balance">
-              We sent a verification code to{" "}
-              <span className="font-medium text-foreground">
-                {pendingEmail}
-              </span>
+              Enter the code sent to{" "}
+              <span className="font-medium text-foreground">{email}</span>
             </p>
           </div>
 
           {error && (
             <div className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm">
               {error}
+            </div>
+          )}
+          {successMessage && (
+            <div className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-3 text-emerald-200 text-sm">
+              {successMessage}
             </div>
           )}
 
@@ -145,8 +118,21 @@ export function LoginForm({
           </Field>
 
           <Field>
+            <FieldLabel htmlFor="newPassword">New password</FieldLabel>
+            <Input
+              id="newPassword"
+              type="password"
+              placeholder="At least 8 characters"
+              required
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              disabled={isLoading}
+            />
+          </Field>
+
+          <Field>
             <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? "Verifying..." : "Verify and continue"}
+              {isLoading ? "Updating..." : "Update password"}
             </Button>
           </Field>
 
@@ -155,12 +141,14 @@ export function LoginForm({
               <button
                 type="button"
                 onClick={() => {
-                  setStep("sign-in");
+                  setStep("request");
                   setError(null);
+                  setSuccessMessage(null);
                   setVerificationCode("");
+                  setNewPassword("");
                 }}
                 className="underline underline-offset-4">
-                Back to sign in
+                Back
               </button>
             </FieldDescription>
           </Field>
@@ -172,19 +160,24 @@ export function LoginForm({
   return (
     <form
       className={cn("flex flex-col gap-6", className)}
-      onSubmit={handleSubmit}
+      onSubmit={handleRequestReset}
       {...props}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">Welcome back</h1>
+          <h1 className="text-2xl font-bold">Forgot your password?</h1>
           <p className="text-muted-foreground text-sm text-balance">
-            Sign in to manage your memory walls
+            We&apos;ll email you a reset code.
           </p>
         </div>
 
         {error && (
           <div className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm">
             {error}
+          </div>
+        )}
+        {successMessage && (
+          <div className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-3 text-emerald-200 text-sm">
+            {successMessage}
           </div>
         )}
 
@@ -202,35 +195,16 @@ export function LoginForm({
         </Field>
 
         <Field>
-          <div className="flex items-center">
-            <FieldLabel htmlFor="password">Password</FieldLabel>
-            <Link
-              href="/forgot-password"
-              className="ml-auto text-sm underline-offset-4 hover:underline text-muted-foreground">
-              Forgot your password?
-            </Link>
-          </div>
-          <Input
-            id="password"
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isLoading}
-          />
-        </Field>
-
-        <Field>
           <Button type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading ? "Sending..." : "Send reset code"}
           </Button>
         </Field>
 
         <Field>
           <FieldDescription className="text-center">
-            Don&apos;t have an account?{" "}
-            <Link href="/sign-up" className="underline underline-offset-4">
-              Sign up
+            Remembered it?{" "}
+            <Link href="/sign-in" className="underline underline-offset-4">
+              Back to sign in
             </Link>
           </FieldDescription>
         </Field>
