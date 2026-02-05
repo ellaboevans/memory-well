@@ -14,6 +14,16 @@ import { useConvexAuth } from "convex/react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { z } from "zod";
+
+const signInSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+const verifySchema = z.object({
+  code: z.string().trim().min(8, "Verification code must be 8 characters"),
+});
 
 export function LoginForm({
   className,
@@ -30,6 +40,7 @@ export function LoginForm({
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -41,6 +52,24 @@ export function LoginForm({
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
+
+    const result = signInSchema.safeParse({
+      email,
+      password,
+    });
+    if (!result.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === "string") {
+          nextErrors[key] = issue.message;
+        }
+      }
+      setFieldErrors(nextErrors);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -83,10 +112,27 @@ export function LoginForm({
     if (!pendingEmail) return;
 
     setError(null);
+    setFieldErrors({});
+
+    const result = verifySchema.safeParse({
+      code: verificationCode,
+    });
+    if (!result.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === "string") {
+          nextErrors[key] = issue.message;
+        }
+      }
+      setFieldErrors(nextErrors);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const normalizedCode = verificationCode.replace(/\s+/g, "").trim();
+      const normalizedCode = verificationCode.replaceAll(/\s+/g, "").trim();
       const result = await signIn("password", {
         email: pendingEmail,
         code: normalizedCode,
@@ -171,12 +217,22 @@ export function LoginForm({
               id="verificationCode"
               type="text"
               placeholder="Enter the 8-digit code"
-              required
               value={verificationCode}
               onChange={(e) => setVerificationCode(e.target.value)}
               disabled={isLoading}
               autoComplete="one-time-code"
+              aria-invalid={Boolean(fieldErrors.code)}
+              aria-describedby={
+                fieldErrors.code ? "verificationCode-error" : undefined
+              }
             />
+            {fieldErrors.code && (
+              <FieldDescription
+                id="verificationCode-error"
+                className="text-red-400">
+                {fieldErrors.code}
+              </FieldDescription>
+            )}
           </Field>
 
           <Field>
@@ -247,11 +303,17 @@ export function LoginForm({
             id="email"
             type="email"
             placeholder="you@example.com"
-            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}
+            aria-invalid={Boolean(fieldErrors.email)}
+            aria-describedby={fieldErrors.email ? "email-error" : undefined}
           />
+          {fieldErrors.email && (
+            <FieldDescription id="email-error" className="text-red-400">
+              {fieldErrors.email}
+            </FieldDescription>
+          )}
         </Field>
 
         <Field>
@@ -266,11 +328,19 @@ export function LoginForm({
           <Input
             id="password"
             type="password"
-            required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={isLoading}
+            aria-invalid={Boolean(fieldErrors.password)}
+            aria-describedby={
+              fieldErrors.password ? "password-error" : undefined
+            }
           />
+          {fieldErrors.password && (
+            <FieldDescription id="password-error" className="text-red-400">
+              {fieldErrors.password}
+            </FieldDescription>
+          )}
         </Field>
 
         <Field>

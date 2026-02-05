@@ -13,6 +13,23 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { z } from "zod";
+
+const signUpSchema = z
+  .object({
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    email: z.string().email("Enter a valid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+const verifySchema = z.object({
+  code: z.string().trim().min(8, "Verification code must be 8 characters"),
+});
 
 export function SignupForm({
   className,
@@ -29,19 +46,29 @@ export function SignupForm({
   const [step, setStep] = useState<"sign-up" | "verify-email">("sign-up");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+    const result = signUpSchema.safeParse({
+      name,
+      email,
+      password,
+      confirmPassword,
+    });
+    if (!result.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === "string") {
+          nextErrors[key] = issue.message;
+        }
+      }
+      setFieldErrors(nextErrors);
       return;
     }
 
@@ -71,6 +98,23 @@ export function SignupForm({
   const handleVerify = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
+
+    const result = verifySchema.safeParse({
+      code: verificationCode,
+    });
+    if (!result.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === "string") {
+          nextErrors[key] = issue.message;
+        }
+      }
+      setFieldErrors(nextErrors);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -157,12 +201,22 @@ export function SignupForm({
               id="verificationCode"
               type="text"
               placeholder="Enter the 8-digit code"
-              required
               value={verificationCode}
               onChange={(e) => setVerificationCode(e.target.value)}
               disabled={isLoading}
               autoComplete="one-time-code"
+              aria-invalid={Boolean(fieldErrors.code)}
+              aria-describedby={
+                fieldErrors.code ? "verificationCode-error" : undefined
+              }
             />
+            {fieldErrors.code && (
+              <FieldDescription
+                id="verificationCode-error"
+                className="text-red-400">
+                {fieldErrors.code}
+              </FieldDescription>
+            )}
           </Field>
 
           <Field>
@@ -233,11 +287,17 @@ export function SignupForm({
             id="name"
             type="text"
             placeholder="John Doe"
-            required
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={isLoading}
+            aria-invalid={Boolean(fieldErrors.name)}
+            aria-describedby={fieldErrors.name ? "name-error" : undefined}
           />
+          {fieldErrors.name && (
+            <FieldDescription id="name-error" className="text-red-400">
+              {fieldErrors.name}
+            </FieldDescription>
+          )}
         </Field>
 
         <Field>
@@ -246,11 +306,17 @@ export function SignupForm({
             id="email"
             type="email"
             placeholder="you@example.com"
-            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}
+            aria-invalid={Boolean(fieldErrors.email)}
+            aria-describedby={fieldErrors.email ? "email-error" : undefined}
           />
+          {fieldErrors.email && (
+            <FieldDescription id="email-error" className="text-red-400">
+              {fieldErrors.email}
+            </FieldDescription>
+          )}
         </Field>
 
         <Field>
@@ -259,11 +325,19 @@ export function SignupForm({
             id="password"
             type="password"
             placeholder="At least 8 characters"
-            required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={isLoading}
+            aria-invalid={Boolean(fieldErrors.password)}
+            aria-describedby={
+              fieldErrors.password ? "password-error" : undefined
+            }
           />
+          {fieldErrors.password && (
+            <FieldDescription id="password-error" className="text-red-400">
+              {fieldErrors.password}
+            </FieldDescription>
+          )}
         </Field>
 
         <Field>
@@ -272,11 +346,21 @@ export function SignupForm({
             id="confirmPassword"
             type="password"
             placeholder="Confirm your password"
-            required
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             disabled={isLoading}
+            aria-invalid={Boolean(fieldErrors.confirmPassword)}
+            aria-describedby={
+              fieldErrors.confirmPassword ? "confirmPassword-error" : undefined
+            }
           />
+          {fieldErrors.confirmPassword && (
+            <FieldDescription
+              id="confirmPassword-error"
+              className="text-red-400">
+              {fieldErrors.confirmPassword}
+            </FieldDescription>
+          )}
         </Field>
 
         <Field>

@@ -13,6 +13,16 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { z } from "zod";
+
+const requestSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+});
+
+const verifySchema = z.object({
+  code: z.string().trim().min(8, "Verification code must be 8 characters"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
 
 export function PasswordResetForm({
   className,
@@ -28,12 +38,28 @@ export function PasswordResetForm({
   const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRequestReset = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
+    setFieldErrors({});
+
+    const result = requestSchema.safeParse({ email });
+    if (!result.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === "string") {
+          nextErrors[key] = issue.message;
+        }
+      }
+      setFieldErrors(nextErrors);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -56,10 +82,28 @@ export function PasswordResetForm({
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
+    setFieldErrors({});
+
+    const result = verifySchema.safeParse({
+      code: verificationCode,
+      newPassword,
+    });
+    if (!result.success) {
+      const nextErrors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = issue.path[0];
+        if (typeof key === "string") {
+          nextErrors[key] = issue.message;
+        }
+      }
+      setFieldErrors(nextErrors);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const normalizedCode = verificationCode.replace(/\s+/g, "").trim();
+      const normalizedCode = verificationCode.replaceAll(/\s+/g, "").trim();
       await signIn("password", {
         email,
         code: normalizedCode,
@@ -154,12 +198,22 @@ export function PasswordResetForm({
               id="verificationCode"
               type="text"
               placeholder="Enter the 8-digit code"
-              required
               value={verificationCode}
               onChange={(e) => setVerificationCode(e.target.value)}
               disabled={isLoading}
               autoComplete="one-time-code"
+              aria-invalid={Boolean(fieldErrors.code)}
+              aria-describedby={
+                fieldErrors.code ? "verificationCode-error" : undefined
+              }
             />
+            {fieldErrors.code && (
+              <FieldDescription
+                id="verificationCode-error"
+                className="text-red-400">
+                {fieldErrors.code}
+              </FieldDescription>
+            )}
           </Field>
 
           <Field>
@@ -168,11 +222,19 @@ export function PasswordResetForm({
               id="newPassword"
               type="password"
               placeholder="At least 8 characters"
-              required
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               disabled={isLoading}
+              aria-invalid={Boolean(fieldErrors.newPassword)}
+              aria-describedby={
+                fieldErrors.newPassword ? "newPassword-error" : undefined
+              }
             />
+            {fieldErrors.newPassword && (
+              <FieldDescription id="newPassword-error" className="text-red-400">
+                {fieldErrors.newPassword}
+              </FieldDescription>
+            )}
           </Field>
 
           <Field>
@@ -253,11 +315,17 @@ export function PasswordResetForm({
             id="email"
             type="email"
             placeholder="you@example.com"
-            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}
+            aria-invalid={Boolean(fieldErrors.email)}
+            aria-describedby={fieldErrors.email ? "email-error" : undefined}
           />
+          {fieldErrors.email && (
+            <FieldDescription id="email-error" className="text-red-400">
+              {fieldErrors.email}
+            </FieldDescription>
+          )}
         </Field>
 
         <Field>
