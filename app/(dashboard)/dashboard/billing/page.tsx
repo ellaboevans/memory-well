@@ -79,6 +79,30 @@ export default function BillingPage() {
     globalThis.location.href = checkoutUrl;
   };
 
+  if (profile === undefined) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Billing</h1>
+          <p className="mt-1 text-sm text-zinc-400">
+            Manage your subscription and billing information
+          </p>
+        </div>
+        <div className="space-y-4 animate-pulse">
+          <div className="h-24 bg-zinc-900 border border-zinc-800 rounded-lg" />
+          <div className="grid gap-6 lg:grid-cols-2">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-64 bg-zinc-900 border border-zinc-800 rounded-lg"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -90,7 +114,10 @@ export default function BillingPage() {
 
       {/* Success Message */}
       {showSuccess && (
-        <div className="bg-green-900/50 border border-green-800 rounded-lg p-4">
+        <div
+          className="bg-green-900/50 border border-green-800 rounded-lg p-4"
+          role="alert"
+          aria-live="polite">
           <div className="flex items-center gap-2">
             <Check className="h-5 w-5 text-green-400" />
             <p className="text-green-200 font-medium">

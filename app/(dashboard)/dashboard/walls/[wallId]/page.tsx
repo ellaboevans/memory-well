@@ -74,15 +74,31 @@ export default function WallDetailPage() {
   const [qrSize, setQrSize] = useState(320);
   const [qrMargin, setQrMargin] = useState(2);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleDeleteWall = async () => {
-    await removeWall({ wallId });
-    router.push("/dashboard");
+    setActionError(null);
+    try {
+      await removeWall({ wallId });
+      router.push("/dashboard");
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : "Failed to delete wall",
+      );
+    }
   };
 
   const handleDeleteEntry = async (entryId: Id<"entries">) => {
-    await removeEntry({ entryId });
-    setDeletingEntryId(null);
+    setActionError(null);
+    try {
+      await removeEntry({ entryId });
+      setDeletingEntryId(null);
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : "Failed to delete signature",
+      );
+    }
   };
 
   const getVisibilityStyle = (visibility: "public" | "private") => {
@@ -156,7 +172,19 @@ export default function WallDetailPage() {
 
   const renderEntries = () => {
     if (entries === undefined) {
-      return <div className="text-zinc-400">Loading signatures...</div>;
+      return (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 animate-pulse">
+              <div className="h-4 w-1/3 bg-zinc-800 rounded" />
+              <div className="h-3 w-2/3 bg-zinc-800 rounded mt-3" />
+              <div className="h-3 w-1/4 bg-zinc-800 rounded mt-3" />
+            </div>
+          ))}
+        </div>
+      );
     }
 
     if (entries.length === 0) {
@@ -233,13 +261,25 @@ export default function WallDetailPage() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => toggleVerified({ entryId: entry._id })}
+                        onClick={async () => {
+                          setActionError(null);
+                          try {
+                            await toggleVerified({ entryId: entry._id });
+                          } catch (err) {
+                            setActionError(
+                              err instanceof Error
+                                ? err.message
+                                : "Failed to update verification",
+                            );
+                          }
+                        }}
                         className="p-2 text-zinc-400 hover:text-blue-400 transition-colors"
                         aria-label={
                           entry.isVerified
                             ? "Remove verification"
                             : "Mark as verified"
-                        }>
+                        }
+                        aria-pressed={entry.isVerified}>
                         <BadgeCheck
                           className={`h-5 w-5 ${
                             entry.isVerified ? "text-blue-400" : ""
@@ -256,11 +296,23 @@ export default function WallDetailPage() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => toggleHidden({ entryId: entry._id })}
+                        onClick={async () => {
+                          setActionError(null);
+                          try {
+                            await toggleHidden({ entryId: entry._id });
+                          } catch (err) {
+                            setActionError(
+                              err instanceof Error
+                                ? err.message
+                                : "Failed to update visibility",
+                            );
+                          }
+                        }}
                         className="p-2 text-zinc-400 hover:text-white transition-colors"
                         aria-label={
                           entry.isHidden ? "Show entry" : "Hide entry"
-                        }>
+                        }
+                        aria-pressed={entry.isHidden}>
                         {entry.isHidden ? (
                           <Eye className="h-5 w-5" />
                         ) : (
@@ -295,7 +347,7 @@ export default function WallDetailPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href="/dashboard"
@@ -315,24 +367,32 @@ export default function WallDetailPage() {
             </a>
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link
             href={`/dashboard/walls/${wallId}/export`}
-            className="px-4 py-2 border border-zinc-700 rounded-md text-sm font-medium text-white hover:bg-zinc-800 transition-colors">
+            className="px-4 py-2 border border-zinc-700 rounded-md text-sm font-medium text-white hover:bg-zinc-800 transition-colors w-full sm:w-auto text-center">
             Export
           </Link>
           <Link
             href={`/dashboard/walls/${wallId}/edit`}
-            className="px-4 py-2 border border-zinc-700 rounded-md text-sm font-medium text-white hover:bg-zinc-800 transition-colors">
+            className="px-4 py-2 border border-zinc-700 rounded-md text-sm font-medium text-white hover:bg-zinc-800 transition-colors w-full sm:w-auto text-center">
             Edit Wall
           </Link>
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="px-4 py-2 border border-red-800 rounded-md text-sm font-medium text-red-400 hover:bg-red-900/50 transition-colors">
+            className="px-4 py-2 border border-red-800 rounded-md text-sm font-medium text-red-400 hover:bg-red-900/50 transition-colors w-full sm:w-auto text-center">
             Delete
           </button>
         </div>
       </div>
+      {actionError && (
+        <div
+          className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm"
+          role="alert"
+          aria-live="polite">
+          {actionError}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
@@ -376,17 +436,18 @@ export default function WallDetailPage() {
             <div className="flex-1 text-white text-sm break-all">
               {fullWallUrl}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 variant="outline"
                 className="border-zinc-700"
                 onClick={async () => {
+                  setCopyError(null);
                   try {
                     await navigator.clipboard.writeText(fullWallUrl);
                     setCopyFeedback(true);
                     setTimeout(() => setCopyFeedback(false), 1600);
                   } catch {
-                    // noop
+                    setCopyError("Failed to copy link. Please try again.");
                   }
                 }}>
                 <span
@@ -410,6 +471,11 @@ export default function WallDetailPage() {
               </Button>
             </div>
           </dd>
+          {copyError && (
+            <p className="mt-2 text-xs text-red-400" role="alert">
+              {copyError}
+            </p>
+          )}
         </div>
       </div>
 
@@ -602,58 +668,70 @@ export default function WallDetailPage() {
       </div>
 
       {/* Delete wall confirmation */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-white mb-2">
-              Delete this wall?
-            </h3>
-            <p className="text-zinc-400 mb-6">
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Delete this wall?</DialogTitle>
+            <DialogDescription className="text-zinc-400">
               This will permanently delete &quot;{wall.title}&quot; and all its
               signatures. This action cannot be undone.
-            </p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 border border-zinc-700 rounded-md text-sm font-medium text-white hover:bg-zinc-800 transition-colors">
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteWall}
-                className="flex-1 px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">
-                Delete Wall
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-zinc-700"
+              onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteWall}>
+              Delete Wall
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete entry confirmation */}
-      {deletingEntryId && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-white mb-2">
-              Delete this signature?
-            </h3>
-            <p className="text-zinc-400 mb-6">
+      <Dialog
+        open={Boolean(deletingEntryId)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingEntryId(null);
+          }
+        }}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Delete this signature?</DialogTitle>
+            <DialogDescription className="text-zinc-400">
               This will permanently delete this signature. This action cannot be
               undone.
-            </p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setDeletingEntryId(null)}
-                className="flex-1 px-4 py-2 border border-zinc-700 rounded-md text-sm font-medium text-white hover:bg-zinc-800 transition-colors">
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDeleteEntry(deletingEntryId)}
-                className="flex-1 px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">
-                Delete Signature
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-zinc-700"
+              onClick={() => setDeletingEntryId(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (deletingEntryId) {
+                  handleDeleteEntry(deletingEntryId);
+                }
+              }}>
+              Delete Signature
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

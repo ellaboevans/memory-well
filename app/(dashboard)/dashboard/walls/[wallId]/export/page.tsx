@@ -35,12 +35,14 @@ export default function ExportWallPage() {
   const [layout, setLayout] = useState<ExportLayout>("grid");
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState("");
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const handleExport = useCallback(async () => {
     if (!previewRef.current || !wall) return;
 
     setIsExporting(true);
     setProgress("Preparing export...");
+    setExportError(null);
 
     try {
       // Wait a bit for images to load
@@ -93,7 +95,11 @@ export default function ExportWallPage() {
       setTimeout(() => setProgress(""), 2000);
     } catch (error) {
       console.error("Export failed:", error);
-      setProgress("Export failed. Please try again.");
+      setExportError(
+        error instanceof Error
+          ? error.message
+          : "Export failed. Please try again.",
+      );
     } finally {
       setIsExporting(false);
     }
@@ -261,7 +267,10 @@ export default function ExportWallPage() {
               disabled={isExporting || visibleEntries.length === 0}
               className="w-full px-4 py-3 bg-white text-black font-medium rounded-md hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               {isExporting ? (
-                <span className="flex items-center justify-center gap-2">
+                <span
+                  className="flex items-center justify-center gap-2"
+                  role="status"
+                  aria-live="polite">
                   <svg
                     className="animate-spin h-4 w-4"
                     viewBox="0 0 24 24"
@@ -286,6 +295,11 @@ export default function ExportWallPage() {
                 `Download ${format.toUpperCase()}`
               )}
             </button>
+            {exportError && (
+              <p className="mt-3 text-sm text-red-400 text-center" role="alert">
+                {exportError}
+              </p>
+            )}
 
             {visibleEntries.length === 0 && (
               <p className="mt-3 text-sm text-zinc-500 text-center">

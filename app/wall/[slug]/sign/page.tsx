@@ -228,7 +228,10 @@ export default function SignWallPage() {
       <main className="max-w-2xl mx-auto px-4 py-8 sm:px-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-900/50 border border-red-800 rounded-lg p-4 text-red-200 text-sm">
+            <div
+              className="bg-red-900/50 border border-red-800 rounded-lg p-4 text-red-200 text-sm"
+              role="alert"
+              aria-live="polite">
               {error}
             </div>
           )}
@@ -318,6 +321,8 @@ export default function SignWallPage() {
                   key={sticker}
                   type="button"
                   onClick={() => toggleSticker(sticker)}
+                  aria-pressed={selectedStickers.includes(sticker)}
+                  aria-label={`Add sticker ${sticker}`}
                   className={`w-12 h-12 text-2xl rounded-lg border transition-all ${
                     selectedStickers.includes(sticker)
                       ? "border-white bg-zinc-800 scale-110"

@@ -320,7 +320,10 @@ export default function EditWallPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm">
+            <div
+              className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm"
+              role="alert"
+              aria-live="polite">
               {error}
             </div>
           )}
@@ -403,7 +406,8 @@ export default function EditWallPage() {
                   type="button"
                   onClick={removeCover}
                   className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black/80 rounded-full text-white transition-colors"
-                  title="Remove cover">
+                  title="Remove cover"
+                  aria-label="Remove cover image">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-4 w-4"
@@ -661,6 +665,9 @@ export default function EditWallPage() {
             <button
               type="button"
               onClick={() => setAcceptingEntries(!acceptingEntries)}
+              role="switch"
+              aria-checked={acceptingEntries}
+              aria-label="Toggle accepting new signatures"
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 acceptingEntries ? "bg-green-600" : "bg-zinc-600"
               }`}>
@@ -695,6 +702,9 @@ export default function EditWallPage() {
                     setEntryWindowEndTime("");
                   }
                 }}
+                role="switch"
+                aria-checked={entryWindowEnabled}
+                aria-label="Toggle entry window"
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                   entryWindowEnabled ? "bg-green-600" : "bg-zinc-600"
                 }`}>
@@ -707,7 +717,7 @@ export default function EditWallPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FieldGroup className="flex-row">
+              <FieldGroup className="flex-col gap-3 sm:flex-row">
                 <Field>
                   <FieldLabel htmlFor="entryWindowStartDate">Start</FieldLabel>
                   <Popover
@@ -739,7 +749,7 @@ export default function EditWallPage() {
                     </PopoverContent>
                   </Popover>
                 </Field>
-                <Field className="w-32">
+                <Field className="w-full sm:w-32">
                   <FieldLabel htmlFor="entryWindowStartTime">Time</FieldLabel>
                   <Input
                     type="time"
@@ -753,7 +763,7 @@ export default function EditWallPage() {
                 </Field>
               </FieldGroup>
 
-              <FieldGroup className="flex-row">
+              <FieldGroup className="flex-col gap-3 sm:flex-row">
                 <Field>
                   <FieldLabel htmlFor="entryWindowEndDate">End</FieldLabel>
                   <Popover open={endPickerOpen} onOpenChange={setEndPickerOpen}>
@@ -783,7 +793,7 @@ export default function EditWallPage() {
                     </PopoverContent>
                   </Popover>
                 </Field>
-                <Field className="w-32">
+                <Field className="w-full sm:w-32">
                   <FieldLabel htmlFor="entryWindowEndTime">Time</FieldLabel>
                   <Input
                     type="time"

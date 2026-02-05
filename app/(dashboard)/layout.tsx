@@ -37,7 +37,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+        <div
+          className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"
+          role="status"
+          aria-label="Loading dashboard"
+        />
       </div>
     );
   }
@@ -46,7 +50,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+        <div
+          className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"
+          role="status"
+          aria-label="Loading dashboard"
+        />
       </div>
     );
   }

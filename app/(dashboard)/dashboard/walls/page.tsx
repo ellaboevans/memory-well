@@ -13,7 +13,31 @@ export default function WallsListPage() {
 
   const renderWallsList = () => {
     if (walls === undefined) {
-      return <div className="text-zinc-400">Loading...</div>;
+      return (
+        <div className="space-y-4">
+          <div className="md:hidden space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 animate-pulse">
+                <div className="h-5 w-1/2 bg-zinc-800 rounded" />
+                <div className="h-4 w-3/4 bg-zinc-800 rounded mt-3" />
+                <div className="h-4 w-1/3 bg-zinc-800 rounded mt-3" />
+              </div>
+            ))}
+          </div>
+          <div className="hidden md:block bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+            <div className="divide-y divide-zinc-800">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="px-6 py-4 animate-pulse">
+                  <div className="h-4 w-1/3 bg-zinc-800 rounded" />
+                  <div className="h-3 w-1/2 bg-zinc-800 rounded mt-2" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
     }
 
     if (walls.length === 0) {
@@ -37,90 +61,141 @@ export default function WallsListPage() {
     }
 
     return (
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-zinc-800">
-          <thead className="bg-zinc-900">
-            <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                Wall
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                URL
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                Visibility
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                Status
-              </th>
-              <th scope="col" className="relative px-6 py-3">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-800">
-            {walls.map((wall) => (
-              <tr
-                key={wall._id}
-                className="hover:bg-zinc-800/50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
+      <>
+        <div className="md:hidden space-y-3">
+          {walls.map((wall) => (
+            <div
+              key={wall._id}
+              className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
                   <Link
                     href={`/dashboard/walls/${wall._id}`}
                     className="text-white font-medium hover:text-zinc-300">
                     {wall.title}
                   </Link>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
                   <a
                     href={getWallUrl(wall.slug)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-white">
+                    className="mt-1 inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-white">
                     {getWallDisplayUrl(wall.slug)}
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
-                      wall.visibility === "public"
-                        ? "bg-green-900/50 text-green-400"
-                        : "bg-red-900/50 text-red-400"
-                    }`}>
-                    {wall.visibility}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
-                      wall.acceptingEntries
-                        ? "bg-green-900/50 text-green-400"
-                        : "bg-zinc-700 text-zinc-400"
-                    }`}>
-                    {wall.acceptingEntries ? "Open" : "Closed"}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link
-                    href={`/dashboard/walls/${wall._id}`}
-                    className="inline-flex items-center gap-1 text-zinc-400 hover:text-white">
-                    View
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </td>
+                </div>
+                <Link
+                  href={`/dashboard/walls/${wall._id}`}
+                  className="inline-flex items-center gap-1 text-zinc-400 hover:text-white text-sm">
+                  View
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
+                    wall.visibility === "public"
+                      ? "bg-green-900/50 text-green-400"
+                      : "bg-red-900/50 text-red-400"
+                  }`}>
+                  {wall.visibility}
+                </span>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
+                    wall.acceptingEntries
+                      ? "bg-green-900/50 text-green-400"
+                      : "bg-zinc-700 text-zinc-400"
+                  }`}>
+                  {wall.acceptingEntries ? "Open" : "Closed"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="hidden md:block bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+          <table className="min-w-full divide-y divide-zinc-800">
+            <thead className="bg-zinc-900">
+              <tr>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  Wall
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  URL
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  Visibility
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                  Status
+                </th>
+                <th scope="col" className="relative px-6 py-3">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-zinc-800">
+              {walls.map((wall) => (
+                <tr
+                  key={wall._id}
+                  className="hover:bg-zinc-800/50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Link
+                      href={`/dashboard/walls/${wall._id}`}
+                      className="text-white font-medium hover:text-zinc-300">
+                      {wall.title}
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <a
+                      href={getWallUrl(wall.slug)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-white">
+                      {getWallDisplayUrl(wall.slug)}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
+                        wall.visibility === "public"
+                          ? "bg-green-900/50 text-green-400"
+                          : "bg-red-900/50 text-red-400"
+                      }`}>
+                      {wall.visibility}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
+                        wall.acceptingEntries
+                          ? "bg-green-900/50 text-green-400"
+                          : "bg-zinc-700 text-zinc-400"
+                      }`}>
+                      {wall.acceptingEntries ? "Open" : "Closed"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <Link
+                      href={`/dashboard/walls/${wall._id}`}
+                      className="inline-flex items-center gap-1 text-zinc-400 hover:text-white">
+                      View
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
     );
   };
 

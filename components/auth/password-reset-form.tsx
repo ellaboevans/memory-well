@@ -130,12 +130,18 @@ export function PasswordResetForm({
           </div>
 
           {error && (
-            <div className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm">
+            <div
+              className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm"
+              role="alert"
+              aria-live="polite">
               {error}
             </div>
           )}
           {successMessage && (
-            <div className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-3 text-emerald-200 text-sm">
+            <div
+              className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-3 text-emerald-200 text-sm"
+              role="alert"
+              aria-live="polite">
               {successMessage}
             </div>
           )}
@@ -225,12 +231,18 @@ export function PasswordResetForm({
         </div>
 
         {error && (
-          <div className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm">
+          <div
+            className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm"
+            role="alert"
+            aria-live="polite">
             {error}
           </div>
         )}
         {successMessage && (
-          <div className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-3 text-emerald-200 text-sm">
+          <div
+            className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-3 text-emerald-200 text-sm"
+            role="status"
+            aria-live="polite">
             {successMessage}
           </div>
         )}

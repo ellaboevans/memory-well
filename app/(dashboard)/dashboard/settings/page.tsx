@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,12 +40,15 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     setIsSaving(true);
     setSuccessMessage("");
+    setProfileError(null);
     try {
       await updateProfile({ displayName: displayName.trim() || undefined });
       setSuccessMessage("Profile updated successfully!");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
-      console.error("Failed to update profile:", error);
+      setProfileError(
+        error instanceof Error ? error.message : "Failed to update profile",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -125,6 +129,14 @@ export default function SettingsPage() {
           <CardDescription>Update your personal information</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {profileError && (
+            <div
+              className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm"
+              role="alert"
+              aria-live="polite">
+              {profileError}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="displayName" className="text-zinc-300">
               Display Name
@@ -137,12 +149,17 @@ export default function SettingsPage() {
               className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
             />
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button onClick={handleSaveProfile} disabled={isSaving}>
               {isSaving ? "Saving..." : "Save Changes"}
             </Button>
             {successMessage && (
-              <span className="text-sm text-green-400">{successMessage}</span>
+              <span
+                className="text-sm text-green-400"
+                role="alert"
+                aria-live="polite">
+                {successMessage}
+              </span>
             )}
           </div>
         </CardContent>
@@ -203,12 +220,18 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {passwordError && (
-            <div className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm">
+            <div
+              className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm"
+              role="alert"
+              aria-live="polite">
               {passwordError}
             </div>
           )}
           {passwordSuccess && (
-            <div className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-3 text-emerald-200 text-sm">
+            <div
+              className="bg-emerald-900/40 border border-emerald-800 rounded-lg p-3 text-emerald-200 text-sm"
+              role="alert"
+              aria-live="polite">
               {passwordSuccess}
             </div>
           )}
@@ -252,7 +275,7 @@ export default function SettingsPage() {
             />
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button
               onClick={handleChangePassword}
               disabled={isUpdatingPassword}>
@@ -274,7 +297,7 @@ export default function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-white font-medium">Delete Account</p>
               <p className="text-sm text-zinc-400">

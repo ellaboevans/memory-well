@@ -155,7 +155,10 @@ export function LoginForm({
           </div>
 
           {error && (
-            <div className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm">
+            <div
+              className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm"
+              role="alert"
+              aria-live="polite">
               {error}
             </div>
           )}
@@ -230,7 +233,10 @@ export function LoginForm({
         </div>
 
         {error && (
-          <div className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm">
+          <div
+            className="bg-red-900/50 border border-red-800 rounded-lg p-3 text-red-200 text-sm"
+            role="alert"
+            aria-live="polite">
             {error}
           </div>
         )}

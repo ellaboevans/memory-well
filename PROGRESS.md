@@ -125,11 +125,11 @@ Last Updated: February 5, 2026
 
 ## 🔧 Technical Debt / Improvements
 
-- [ ] Add loading states to more components
-- [ ] Better error handling throughout
+- [x] Add loading states to more components
+- [x] Better error handling throughout
 - [ ] Form validation improvements
-- [ ] Mobile responsiveness audit
-- [ ] Accessibility audit (a11y)
+- [x] Mobile responsiveness audit
+- [x] Accessibility audit (a11y)
 - [ ] Unit tests
 - [ ] E2E tests
 

@@ -45,6 +45,9 @@ export default function DashboardPage() {
     days: daysFilter,
   });
 
+  const isWallsLoading = walls === undefined;
+  const isMetricsLoading = metrics === undefined;
+
   const totalSignatures =
     walls?.reduce((acc, wall) => acc + (wall.entryCount ?? 0), 0) ?? 0;
 
@@ -151,14 +154,23 @@ export default function DashboardPage() {
             <Layers className="h-4 w-4 text-zinc-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
-              {walls?.length ?? 0}
-            </div>
-            <p className="text-xs text-zinc-500 mt-1">
-              {profile?.tier === "premium"
-                ? "Unlimited"
-                : `${Math.max(0, 3 - (walls?.length ?? 0))} remaining on free`}
-            </p>
+            {isWallsLoading ? (
+              <div className="animate-pulse space-y-2">
+                <div className="h-7 w-12 bg-zinc-800 rounded" />
+                <div className="h-3 w-24 bg-zinc-800 rounded" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-white">
+                  {walls?.length ?? 0}
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {profile?.tier === "premium"
+                    ? "Unlimited"
+                    : `${Math.max(0, 3 - (walls?.length ?? 0))} remaining on free`}
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -170,10 +182,21 @@ export default function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-zinc-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
-              {totalSignatures}
-            </div>
-            <p className="text-xs text-zinc-500 mt-1">Across all your walls</p>
+            {isWallsLoading ? (
+              <div className="animate-pulse space-y-2">
+                <div className="h-7 w-12 bg-zinc-800 rounded" />
+                <div className="h-3 w-24 bg-zinc-800 rounded" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-white">
+                  {totalSignatures}
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Across all your walls
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -185,16 +208,25 @@ export default function DashboardPage() {
             <Crown className="h-4 w-4 text-zinc-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white capitalize">
-              {profile?.tier ?? "free"}
-            </div>
-            {profile?.tier !== "premium" && (
-              <Link
-                href="/dashboard/billing"
-                className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1">
-                Upgrade to premium
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+            {profile === undefined ? (
+              <div className="animate-pulse space-y-2">
+                <div className="h-7 w-16 bg-zinc-800 rounded" />
+                <div className="h-3 w-24 bg-zinc-800 rounded" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-white capitalize">
+                  {profile?.tier ?? "free"}
+                </div>
+                {profile?.tier !== "premium" && (
+                  <Link
+                    href="/dashboard/billing"
+                    className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1">
+                    Upgrade to premium
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -236,7 +268,7 @@ export default function DashboardPage() {
 
       {/* Analytics */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="text-lg font-semibold text-white">
             Signature Activity
           </h2>
@@ -265,14 +297,9 @@ export default function DashboardPage() {
                   Total Signatures
                 </CardTitle>
                 <CardDescription className="text-zinc-500">
-                  {metrics
-                    ? daysFilter === 7
-                      ? metrics.last7
-                      : daysFilter === 30
-                        ? metrics.last30
-                        : metrics.last90
-                    : 0}{" "}
-                  in the last {daysFilter} days
+                  {isMetricsLoading
+                    ? "Loading activity..."
+                    : `${daysFilter === 7 ? metrics?.last7 : daysFilter === 30 ? metrics?.last30 : metrics?.last90} in the last ${daysFilter} days`}
                 </CardDescription>
               </div>
               <div className="flex gap-4 text-sm text-zinc-400">
@@ -292,66 +319,70 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <ChartContainer
-              config={{
-                signatures: {
-                  label: "Signatures",
-                  color: "hsl(var(--chart-1))",
-                },
-              }}
-              className="h-[240px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={metrics?.series ?? []}>
-                  <defs>
-                    <linearGradient
-                      id="fillSignatures"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="var(--color-chart-1)"
-                        stopOpacity={0.6}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="var(--color-chart-1)"
-                        stopOpacity={0.05}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    minTickGap={20}
-                    tickFormatter={(value: string) =>
-                      format(parseISO(value), "MMM d")
-                    }
-                  />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        labelFormatter={(value) =>
-                          format(parseISO(value), "PPP")
-                        }
-                      />
-                    }
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="count"
-                    name="Signatures"
-                    stroke="var(--color-chart-1)"
-                    fill="url(#fillSignatures)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            {isMetricsLoading ? (
+              <div className="h-[240px] w-full animate-pulse rounded-lg bg-zinc-800" />
+            ) : (
+              <ChartContainer
+                config={{
+                  signatures: {
+                    label: "Signatures",
+                    color: "hsl(var(--chart-1))",
+                  },
+                }}
+                className="h-[240px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={metrics?.series ?? []}>
+                    <defs>
+                      <linearGradient
+                        id="fillSignatures"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1">
+                        <stop
+                          offset="5%"
+                          stopColor="var(--color-chart-1)"
+                          stopOpacity={0.6}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="var(--color-chart-1)"
+                          stopOpacity={0.05}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      minTickGap={20}
+                      tickFormatter={(value: string) =>
+                        format(parseISO(value), "MMM d")
+                      }
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={(value) =>
+                            format(parseISO(value), "PPP")
+                          }
+                        />
+                      }
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      name="Signatures"
+                      stroke="var(--color-chart-1)"
+                      fill="url(#fillSignatures)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            )}
           </CardContent>
         </Card>
       </div>
