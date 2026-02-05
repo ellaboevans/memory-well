@@ -2,6 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { rateLimiter } from "./rateLimiter";
+import { internal } from "./_generated/api";
 
 // Entry validator for return types
 const entryValidator = v.object({
@@ -194,7 +195,27 @@ export const toggleVerified = mutation({
       throw new ConvexError({ code: "FORBIDDEN", message: "Not authorized" });
     }
 
-    await ctx.db.patch(args.entryId, { isVerified: !entry.isVerified });
+    const nextVerified = !entry.isVerified;
+    await ctx.db.patch(args.entryId, { isVerified: nextVerified });
+
+    if (nextVerified && entry.email) {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ??
+        (process.env.NEXT_PUBLIC_APP_DOMAIN
+          ? `https://${process.env.NEXT_PUBLIC_APP_DOMAIN}`
+          : "");
+      const wallUrl = `${baseUrl}/wall/${wall.slug}`;
+      await ctx.scheduler.runAfter(
+        0,
+        internal.entryNotifications.sendEntryVerifiedEmail,
+        {
+          email: entry.email,
+          entryName: entry.name,
+          wallTitle: wall.title,
+          wallUrl,
+        },
+      );
+    }
     return null;
   },
 });

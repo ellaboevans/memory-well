@@ -14,6 +14,7 @@ import type * as account from "../account.js";
 import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
 import type * as entries from "../entries.js";
+import type * as entryNotifications from "../entryNotifications.js";
 import type * as http from "../http.js";
 import type * as profiles from "../profiles.js";
 import type * as rateLimiter from "../rateLimiter.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   auth: typeof auth;
   entries: typeof entries;
+  entryNotifications: typeof entryNotifications;
   http: typeof http;
   profiles: typeof profiles;
   rateLimiter: typeof rateLimiter;
