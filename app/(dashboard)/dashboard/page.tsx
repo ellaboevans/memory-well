@@ -15,10 +15,28 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreateWallDialog } from "@/components/dashboard/create-wall-dialog";
 import { Layers, Plus, TrendingUp, Crown, ExternalLink } from "lucide-react";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  XAxis,
+} from "recharts";
+import { format, parseISO } from "date-fns";
+import { useState } from "react";
 
 export default function DashboardPage() {
   const profile = useQuery(api.profiles.me);
   const walls = useQuery(api.walls.listMyWalls);
+  const [daysFilter, setDaysFilter] = useState<7 | 30 | 90>(30);
+  const metrics = useQuery(api.analytics.getDashboardMetrics, {
+    days: daysFilter,
+  });
 
   const totalSignatures =
     walls?.reduce((acc, wall) => acc + (wall.entryCount ?? 0), 0) ?? 0;
@@ -206,6 +224,128 @@ export default function DashboardPage() {
         </div>
 
         {renderWallsGrid()}
+      </div>
+
+      {/* Analytics */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">
+            Signature Activity
+          </h2>
+          <div className="flex items-center gap-2">
+            {[7, 30, 90].map((range) => (
+              <Button
+                key={range}
+                variant={daysFilter === range ? "default" : "outline"}
+                size="sm"
+                className={
+                  daysFilter === range
+                    ? ""
+                    : "border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                }
+                onClick={() => setDaysFilter(range as 7 | 30 | 90)}>
+                {range}d
+              </Button>
+            ))}
+          </div>
+        </div>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-white text-base">
+                  Total Signatures
+                </CardTitle>
+                <CardDescription className="text-zinc-500">
+                  {metrics
+                    ? daysFilter === 7
+                      ? metrics.last7
+                      : daysFilter === 30
+                        ? metrics.last30
+                        : metrics.last90
+                    : 0}{" "}
+                  in the last {daysFilter} days
+                </CardDescription>
+              </div>
+              <div className="flex gap-4 text-sm text-zinc-400">
+                <div>
+                  <div className="text-white font-semibold">
+                    {metrics ? metrics.last7 : 0}
+                  </div>
+                  <div className="text-xs text-zinc-500">Last 7 days</div>
+                </div>
+                <div>
+                  <div className="text-white font-semibold">
+                    {metrics ? metrics.total : 0}
+                  </div>
+                  <div className="text-xs text-zinc-500">Total</div>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer
+              config={{
+                signatures: {
+                  label: "Signatures",
+                  color: "hsl(var(--chart-1))",
+                },
+              }}
+              className="h-[240px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={metrics?.series ?? []}>
+                  <defs>
+                    <linearGradient
+                      id="fillSignatures"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1">
+                      <stop
+                        offset="5%"
+                        stopColor="var(--color-chart-1)"
+                        stopOpacity={0.6}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor="var(--color-chart-1)"
+                        stopOpacity={0.05}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    minTickGap={20}
+                    tickFormatter={(value: string) =>
+                      format(parseISO(value), "MMM d")
+                    }
+                  />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(value) =>
+                          format(parseISO(value), "PPP")
+                        }
+                      />
+                    }
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    name="Signatures"
+                    stroke="var(--color-chart-1)"
+                    fill="url(#fillSignatures)"
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

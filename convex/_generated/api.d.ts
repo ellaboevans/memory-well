@@ -11,6 +11,7 @@
 import type * as ResendOTP from "../ResendOTP.js";
 import type * as ResendOTPPasswordReset from "../ResendOTPPasswordReset.js";
 import type * as account from "../account.js";
+import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
 import type * as entries from "../entries.js";
 import type * as http from "../http.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   ResendOTP: typeof ResendOTP;
   ResendOTPPasswordReset: typeof ResendOTPPasswordReset;
   account: typeof account;
+  analytics: typeof analytics;
   auth: typeof auth;
   entries: typeof entries;
   http: typeof http;

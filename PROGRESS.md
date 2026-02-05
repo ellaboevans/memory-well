@@ -39,6 +39,7 @@ Last Updated: February 3, 2026
 - [x] Create wall dialog
 - [x] Wall detail page (view entries)
 - [x] Edit wall page (settings & moderation)
+- [x] Analytics dashboard (activity chart)
 - [x] Billing page
 - [x] Settings page (profile update)
 - [x] Password change in settings
@@ -102,14 +103,14 @@ Last Updated: February 3, 2026
 
 ### High Priority
 
-- [ ] **Analytics Dashboard** - Visitor counts, signature stats over time
+- [x] **Analytics Dashboard** - Visitor counts, signature stats over time
 - [x] **Rate Limiting** - Spam protection on public walls (per email)
 
 ### Medium Priority
 
 - [ ] **Email Notifications** - Weekly/monthly activity digests for owners
 - [ ] **Verified Badge** - Email verification for visitor entries
-- [ ] **QR Code Generation** - Easy wall sharing for events
+- [x] **QR Code Generation** - Easy wall sharing for events
 
 ### Low Priority / Future
 
