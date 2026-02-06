@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { useQuery } from "convex/react";
+import { useEffect, useMemo } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { useParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
@@ -18,6 +18,7 @@ export default function WallCanvasPage() {
     api.entries.listByWall,
     wall ? { wallId: wall._id, limit: 500 } : "skip",
   );
+  const trackWallView = useMutation(api.analytics.trackWallView);
 
   const layout = useMemo(() => {
     if (!entries) return null;
@@ -27,6 +28,40 @@ export default function WallCanvasPage() {
     }));
     return computeSignatureLayout<Doc<"entries">>(mapped);
   }, [entries]);
+
+  useEffect(() => {
+    if (!wall) return;
+    let cancelled = false;
+    const track = async () => {
+      try {
+        const visitorKey = "mw_visitor_id";
+        let visitorId = localStorage.getItem(visitorKey);
+        if (!visitorId) {
+          visitorId = crypto.randomUUID();
+          localStorage.setItem(visitorKey, visitorId);
+        }
+        const geo = await fetch("/api/geo").then((res) => res.json());
+        if (cancelled) return;
+        await trackWallView({
+          wallId: wall._id,
+          visitorId,
+          countryCode: geo.countryCode,
+          country: geo.country,
+          region: geo.region,
+          city: geo.city,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          userAgent: navigator.userAgent,
+          referrer: document.referrer || undefined,
+        });
+      } catch {
+        // noop
+      }
+    };
+    track();
+    return () => {
+      cancelled = true;
+    };
+  }, [trackWallView, wall]);
 
 
   if (wall === undefined || entries === undefined) {

@@ -49,6 +49,23 @@ const applicationTables = {
     .index("by_wall", ["wallId"])
     .index("by_wall_created", ["wallId", "createdAt"]),
 
+  // Wall view analytics (geo insights)
+  wallViews: defineTable({
+    wallId: v.id("walls"),
+    visitorId: v.string(),
+    countryCode: v.optional(v.string()),
+    country: v.optional(v.string()),
+    region: v.optional(v.string()),
+    city: v.optional(v.string()),
+    timezone: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    referrer: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_wall_created", ["wallId", "createdAt"])
+    .index("by_wall_country", ["wallId", "countryCode"])
+    .index("by_wall_visitor", ["wallId", "visitorId"]),
+
   // Purchases for billing (Polar.sh - one-time payment)
   subscriptions: defineTable({
     userId: v.id("users"),

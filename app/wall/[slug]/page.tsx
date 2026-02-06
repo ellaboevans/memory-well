@@ -1,6 +1,6 @@
 "use client";
 
-import { usePaginatedQuery, useQuery } from "convex/react";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -48,6 +48,7 @@ export default function PublicWallPage() {
     wall ? { wallId: wall._id } : "skip",
     { initialNumItems: 8 },
   );
+  const trackWallView = useMutation(api.analytics.trackWallView);
   const [now, setNow] = useState(() => Date.now());
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
   useEffect(() => {
@@ -62,6 +63,40 @@ export default function PublicWallPage() {
   const canSign = Boolean(
     wall?.acceptingEntries && !windowNotStarted && !windowClosed,
   );
+
+  useEffect(() => {
+    if (!wall) return;
+    let cancelled = false;
+    const track = async () => {
+      try {
+        const visitorKey = "mw_visitor_id";
+        let visitorId = localStorage.getItem(visitorKey);
+        if (!visitorId) {
+          visitorId = crypto.randomUUID();
+          localStorage.setItem(visitorKey, visitorId);
+        }
+        const geo = await fetch("/api/geo").then((res) => res.json());
+        if (cancelled) return;
+        await trackWallView({
+          wallId: wall._id,
+          visitorId,
+          countryCode: geo.countryCode,
+          country: geo.country,
+          region: geo.region,
+          city: geo.city,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          userAgent: navigator.userAgent,
+          referrer: document.referrer || undefined,
+        });
+      } catch {
+        // noop
+      }
+    };
+    track();
+    return () => {
+      cancelled = true;
+    };
+  }, [trackWallView, wall]);
 
   const queryWantsOpen = canSign && searchParams.get("sign") === "1";
   const signDialogOpen = queryWantsOpen || manualDialogOpen;

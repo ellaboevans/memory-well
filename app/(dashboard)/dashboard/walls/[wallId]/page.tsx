@@ -18,6 +18,19 @@ import {
   Trash2,
 } from "lucide-react";
 import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  XAxis,
+} from "recharts";
+import { format, parseISO } from "date-fns";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -56,6 +69,11 @@ export default function WallDetailPage() {
   const entryCount = useQuery(
     api.entries.countByWall,
     wall ? { wallId: wall._id } : "skip",
+  );
+  const [geoRange, setGeoRange] = useState<7 | 30 | 90>(30);
+  const geoInsights = useQuery(
+    api.analytics.getWallGeoInsights,
+    isPremium && wall ? { wallId, days: geoRange } : "skip",
   );
 
   const toggleHidden = useMutation(api.entries.toggleHidden);
@@ -759,6 +777,159 @@ export default function WallDetailPage() {
       </Dialog>
 
       {/* Entries */}
+      <div className="mb-10">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">Geo Insights</h2>
+          <div className="flex items-center gap-2">
+            {[7, 30, 90].map((range) => (
+              <Button
+                key={range}
+                variant={geoRange === range ? "default" : "outline"}
+                size="sm"
+                className={
+                  geoRange === range
+                    ? ""
+                    : "border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                }
+                onClick={() => setGeoRange(range as 7 | 30 | 90)}
+                disabled={!isPremium}>
+                {range}d
+              </Button>
+            ))}
+          </div>
+        </div>
+        {!isPremium ? (
+          <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/60 p-6 text-center">
+            <p className="text-sm text-zinc-400 mb-4">
+              Geo insights are available on Premium.
+            </p>
+            <Button asChild size="sm">
+              <Link href="/dashboard/billing">Upgrade to Premium</Link>
+            </Button>
+          </div>
+        ) : geoInsights === undefined ? (
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 animate-pulse">
+            <div className="h-4 w-40 rounded bg-zinc-800" />
+            <div className="mt-4 h-3 w-64 rounded bg-zinc-800" />
+            <div className="mt-6 space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-3 w-full rounded bg-zinc-800" />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+            <div className="flex flex-wrap items-center gap-6 text-sm text-zinc-400">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-zinc-500">
+                  Total Views ({geoRange}d)
+                </div>
+                <div className="mt-1 text-xl font-semibold text-white">
+                  {geoInsights.totalViews}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-zinc-500">
+                  Unique Visitors
+                </div>
+                <div className="mt-1 text-xl font-semibold text-white">
+                  {geoInsights.uniqueVisitors}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="text-xs uppercase tracking-wide text-zinc-500">
+                Views over time
+              </div>
+              <ChartContainer
+                config={{
+                  views: {
+                    label: "Views",
+                    color: "#60a5fa",
+                  },
+                }}
+                className="mt-3 h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={geoInsights.series}>
+                    <defs>
+                      <linearGradient
+                        id="fillGeoViews"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1">
+                        <stop
+                          offset="5%"
+                          stopColor="var(--color-views)"
+                          stopOpacity={0.5}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="var(--color-views)"
+                          stopOpacity={0.05}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      minTickGap={20}
+                      tickFormatter={(value: string) =>
+                        format(parseISO(value), "MMM d")
+                      }
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={(value) =>
+                            format(parseISO(value), "PPP")
+                          }
+                        />
+                      }
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      name="Views"
+                      stroke="var(--color-views)"
+                      fill="url(#fillGeoViews)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
+
+            <div className="mt-6">
+              <div className="text-xs uppercase tracking-wide text-zinc-500">
+                Top Countries
+              </div>
+              {geoInsights.countries.length === 0 ? (
+                <p className="mt-2 text-sm text-zinc-400">No geo data yet.</p>
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {geoInsights.countries.map((country) => (
+                    <li
+                      key={country.countryCode ?? country.country ?? "unknown"}
+                      className="flex items-center justify-between text-sm text-zinc-300">
+                      <span>
+                        {country.country ?? "Unknown"}
+                        {country.countryCode ? ` (${country.countryCode})` : ""}
+                      </span>
+                      <span className="text-zinc-400">{country.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div>
         <h2 className="text-lg font-semibold text-white mb-4">
           Signatures ({entries?.length ?? 0})
@@ -772,11 +943,11 @@ export default function WallDetailPage() {
           <DialogHeader>
             <DialogTitle>Delete this wall?</DialogTitle>
             <DialogDescription className="text-zinc-400">
-              This will permanently delete &quot;{wall.title}&quot; and all its
-              signatures. This action cannot be undone.
+              This will permanently delete <strong>{wall.title}</strong> and all
+              its signatures. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 sm:gap-2">
             <Button
               type="button"
               variant="outline"
