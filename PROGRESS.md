@@ -116,7 +116,7 @@ Last Updated: February 6, 2026
 
 ### Low Priority / Future
 
-- [ ] Embed code for websites
+- [x] Embed code for websites
 - [ ] Geo-insights for analytics
 - [ ] Media uploads (photo/audio/video)
 - [ ] Social sharing of wall snapshots
