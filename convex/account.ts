@@ -18,6 +18,25 @@ export const getEmailByUserId = internalQuery({
   },
 });
 
+export const getProfileNameByEmail = internalQuery({
+  args: { email: v.string() },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), args.email))
+      .first();
+    if (!user) return null;
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    return profile?.name ?? null;
+  },
+});
+
 export const changePassword = action({
   args: {
     currentPassword: v.string(),

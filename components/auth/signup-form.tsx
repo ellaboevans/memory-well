@@ -89,7 +89,12 @@ export function SignupForm({
       setStep("verify-email");
       setVerificationCode("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create account");
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.toLowerCase().includes("already exists")) {
+        setError("An account with this email already exists. Please sign in.");
+      } else {
+        setError("Failed to create account. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

@@ -7,6 +7,8 @@ import {
 import { components, internal } from "./_generated/api";
 import { Crons } from "@convex-dev/crons";
 import { v } from "convex/values";
+import { render } from "@react-email/render";
+import OwnerDigestEmail from "../emails/OwnerDigestEmail";
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 const FROM_NAME = process.env.RESEND_FROM_NAME || "Memory Well";
@@ -169,6 +171,24 @@ export const sendOwnerDigestEmails = internalAction({
       const subject = `Your ${args.period} Memory Well digest`;
 
       const text = `${greeting}\n\nHere’s your ${args.period} digest from ${startDate} to ${endDate}.\n\nTotal new entries: ${digest.totalEntries}\n\n${summaries}\n\nView your dashboard: ${baseUrl}/dashboard\n\nThanks,\n${FROM_NAME}`;
+      const summaryData = digest.wallSummaries.slice(0, 10).map((wall) => ({
+        title: wall.title,
+        entryCount: wall.entryCount,
+        url: `${baseUrl}/dashboard/walls/${wall.wallId}`,
+      }));
+      const periodLabel = args.period === "weekly" ? "Weekly" : "Monthly";
+      const html = await render(
+        OwnerDigestEmail({
+          brandName: FROM_NAME,
+          greeting,
+          periodLabel,
+          dateRangeLabel: `from ${startDate} to ${endDate}`,
+          totalEntries: digest.totalEntries,
+          summaries: summaryData,
+          dashboardUrl: `${baseUrl}/dashboard`,
+          baseUrl,
+        }),
+      );
 
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -181,6 +201,7 @@ export const sendOwnerDigestEmails = internalAction({
           to: [digest.ownerEmail],
           subject,
           text,
+          html,
         }),
       });
 

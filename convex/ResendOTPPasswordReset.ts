@@ -1,4 +1,7 @@
 import type { EmailConfig } from "@convex-dev/auth/server";
+import { render } from "@react-email/render";
+import PasswordResetEmail from "../emails/PasswordResetEmail";
+import { internal } from "./_generated/api";
 
 const OTP_LENGTH = 8;
 
@@ -25,12 +28,38 @@ export const ResendOTPPasswordReset: Partial<EmailConfig> = {
   async generateVerificationToken() {
     return generateOtp();
   },
-  async sendVerificationRequest({ identifier, token }) {
+  async sendVerificationRequest(
+    params: { identifier: string; token: string },
+    ctx?: { runQuery: (query: unknown, args: unknown) => Promise<unknown> },
+  ) {
     if (!RESEND_API_KEY) {
       throw new Error("Missing RESEND_API_KEY");
     }
 
+    const { identifier, token } = params;
     const subject = `Reset your ${FROM_NAME} password`;
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ??
+      (process.env.NEXT_PUBLIC_APP_DOMAIN
+        ? `https://${process.env.NEXT_PUBLIC_APP_DOMAIN}`
+        : undefined);
+    const username = ctx
+      ? await ctx.runQuery(internal.account.getProfileNameByEmail, {
+          email: identifier,
+        })
+      : null;
+    const safeUsername =
+      typeof username === "string" && username.trim().length > 0
+        ? username
+        : undefined;
+    const html = await render(
+      PasswordResetEmail({
+        brandName: FROM_NAME,
+        token,
+        username: safeUsername,
+        baseUrl,
+      }),
+    );
 
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -43,6 +72,7 @@ export const ResendOTPPasswordReset: Partial<EmailConfig> = {
         to: [identifier],
         subject,
         text: `Your password reset code is ${token}.`,
+        html,
       }),
     });
 
