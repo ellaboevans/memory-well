@@ -72,6 +72,7 @@ Last Updated: February 6, 2026
 - [x] Entries display on wall page
 - [x] Paginated entries + infinite scrolling
 - [x] Entry card/list components (decoupled)
+- [x] Dashboard entries table with pagination + actions menu
 - [x] Entry timestamps
 - [x] Stickers/emojis (up to 3)
 
@@ -117,9 +118,9 @@ Last Updated: February 6, 2026
 ### Low Priority / Future
 
 - [x] Embed code for websites
-- [ ] Geo-insights for analytics
+- [x] Geo-insights for analytics
 - [ ] Media uploads (photo/audio/video)
-- [ ] Social sharing of wall snapshots
+- [x] Social sharing of wall snapshots (share link + share image)
 - [ ] Commenting/replying on entries
 - [ ] Multi-owner collaborative walls
 
