@@ -10,6 +10,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { ExportWallPreview } from "@/components/export/ExportWallPreview";
 import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type ExportFormat = "pdf" | "png" | "jpg";
 type ExportLayout = "grid" | "list";
