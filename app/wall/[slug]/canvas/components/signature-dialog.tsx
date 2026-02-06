@@ -27,35 +27,37 @@ export interface SignatureDialogHandle {
   close: () => void;
 }
 
-export const SignatureDialogController = forwardRef<SignatureDialogHandle, {
-  primaryColor: string;
-  backgroundColor: string;
-}>(function SignatureDialogController(props, ref) {
+export const SignatureDialogController = forwardRef<
+  SignatureDialogHandle,
+  {
+    primaryColor: string;
+    backgroundColor: string;
+  }
+>(function SignatureDialogController(props, ref) {
   const [signature, setSignature] = useState<Doc<"entries"> | null>(null);
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        open: (nextSignature) => {
-          setSignature(nextSignature);
-        },
-        close: () => {
-          setSignature(null);
-        },
-      }),
-      [],
-    );
+  useImperativeHandle(
+    ref,
+    () => ({
+      open: (nextSignature) => {
+        setSignature(nextSignature);
+      },
+      close: () => {
+        setSignature(null);
+      },
+    }),
+    [],
+  );
 
-    return (
-      <SignatureDialog
-        signature={signature}
-        onClose={() => setSignature(null)}
-        primaryColor={props.primaryColor}
-        backgroundColor={props.backgroundColor}
-      />
-    );
-  },
-);
+  return (
+    <SignatureDialog
+      signature={signature}
+      onClose={() => setSignature(null)}
+      primaryColor={props.primaryColor}
+      backgroundColor={props.backgroundColor}
+    />
+  );
+});
 
 export function SignatureDialog({
   signature,
@@ -139,9 +141,13 @@ export function SignatureDialog({
   return (
     <Dialog open={!!signature} onOpenChange={onClose}>
       <DialogContent
-        className="border-[var(--dialog-border)] bg-[var(--dialog-bg)] text-[var(--dialog-text)] sm:max-w-lg"
+        className="border-(--dialog-border) bg-(--dialog-bg) text-(--dialog-text) sm:max-w-lg"
         overlayClassName="!bg-[var(--dialog-overlay)]"
-        overlayStyle={{ backgroundColor: themeVars["--dialog-overlay"] as string }}
+        overlayStyle={{
+          backgroundColor: (themeVars as Record<string, string>)[
+            "--dialog-overlay"
+          ],
+        }}
         style={themeVars}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -150,7 +156,8 @@ export function SignatureDialog({
               <span
                 className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
                 style={{
-                  backgroundColor: "color-mix(in oklab, var(--dialog-accent) 22%, transparent)",
+                  backgroundColor:
+                    "color-mix(in oklab, var(--dialog-accent) 22%, transparent)",
                   color: "color-mix(in oklab, var(--dialog-accent) 90%, white)",
                 }}
                 aria-label="Verified">
@@ -162,7 +169,7 @@ export function SignatureDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-[var(--dialog-input-border)] bg-[var(--dialog-input-bg)]">
+          <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-(--dialog-input-border) bg-(--dialog-input-bg)">
             {signatureUrl ? (
               <Image
                 src={signatureUrl}
@@ -177,7 +184,7 @@ export function SignatureDialog({
           </div>
 
           {signature.message && (
-            <p className="text-sm whitespace-pre-wrap text-[var(--dialog-muted)]">
+            <p className="text-sm whitespace-pre-wrap text-(--dialog-muted)">
               {signature.message}
             </p>
           )}
@@ -192,7 +199,7 @@ export function SignatureDialog({
             </div>
           )}
 
-          <div className="flex items-center justify-between text-xs text-[var(--dialog-muted)]">
+          <div className="flex items-center justify-between text-xs text-(--dialog-muted)">
             <span>Signed {formattedDate}</span>
             {signature.email && <span>{signature.email}</span>}
           </div>
