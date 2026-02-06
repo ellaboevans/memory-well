@@ -528,6 +528,15 @@ export default function WallDetailPage() {
                 onClick={() => setQrDialogOpen(true)}>
                 Download QR
               </Button>
+              <Button
+                variant="outline"
+                className="border-zinc-700"
+                onClick={() => {
+                  if (!wall) return;
+                  window.open(`/api/share/wall/${wall.slug}`, "_blank");
+                }}>
+                Share Image
+              </Button>
             </div>
           </dd>
           {copyError && (
@@ -849,7 +858,7 @@ export default function WallDetailPage() {
                     color: "#60a5fa",
                   },
                 }}
-                className="mt-3 h-[200px] w-full">
+                className="mt-3 h-50 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={geoInsights.series}>
                     <defs>
