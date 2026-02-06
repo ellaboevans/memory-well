@@ -75,6 +75,9 @@ export default function WallDetailPage() {
   const [qrMargin, setQrMargin] = useState(2);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
+  const [embedCopyFeedback, setEmbedCopyFeedback] = useState<string | null>(
+    null,
+  );
   const [actionError, setActionError] = useState<string | null>(null);
 
   const handleDeleteWall = async () => {
@@ -109,6 +112,34 @@ export default function WallDetailPage() {
 
   const wallUrl = getWallDisplayUrl(wall?.slug as string);
   const fullWallUrl = getWallUrl(wall?.slug as string);
+  const embedWallCode = `<iframe src="${fullWallUrl}" width="100%" height="800" style="border:0;border-radius:12px;" loading="lazy"></iframe>`;
+  const embedSignCode = `<iframe src="${fullWallUrl}/sign" width="100%" height="900" style="border:0;border-radius:12px;" loading="lazy"></iframe>`;
+
+  const renderEmbedPreview = (src: string, height: string) => (
+    <pre className="whitespace-pre-wrap rounded-xl border border-zinc-800 bg-black/80 p-4 text-xs leading-6 text-zinc-200">
+      <code className="block font-mono">
+        <span className="text-sky-300">&lt;iframe</span>{" "}
+        <span className="text-zinc-400">src</span>
+        <span className="text-zinc-500">=</span>
+        <span className="text-emerald-300">&ldquo;{src}&rdquo;</span>
+        {"\n"} <span className="text-zinc-400">width</span>
+        <span className="text-zinc-500">=</span>
+        <span className="text-emerald-300">&ldquo;100%&rdquo;</span>
+        {"\n"} <span className="text-zinc-400">height</span>
+        <span className="text-zinc-500">=</span>
+        <span className="text-emerald-300">&ldquo;{height}&rdquo;</span>
+        {"\n"} <span className="text-zinc-400">style</span>
+        <span className="text-zinc-500">=</span>
+        <span className="text-amber-300">
+          &ldquo;border:0; border-radius:12px;&rdquo;
+        </span>
+        {"\n"} <span className="text-zinc-400">loading</span>
+        <span className="text-zinc-500">=</span>
+        <span className="text-emerald-300">&ldquo;lazy&rdquo;</span>
+        <span className="text-sky-300">&gt;&lt;/iframe&gt;</span>
+      </code>
+    </pre>
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -476,6 +507,64 @@ export default function WallDetailPage() {
               {copyError}
             </p>
           )}
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-5">
+          <dt className="text-sm font-medium text-zinc-400">Embed Code</dt>
+          <dd className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-medium text-white">Wall view</p>
+                  <p className="text-xs text-zinc-500">
+                    Full wall embedded on another site
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-zinc-700"
+                  onClick={async () => {
+                    setCopyError(null);
+                    try {
+                      await navigator.clipboard.writeText(embedWallCode);
+                      setEmbedCopyFeedback("wall");
+                      setTimeout(() => setEmbedCopyFeedback(null), 1600);
+                    } catch {
+                      setCopyError("Failed to copy embed code.");
+                    }
+                  }}>
+                  {embedCopyFeedback === "wall" ? "Copied!" : "Copy"}
+                </Button>
+              </div>
+              {renderEmbedPreview(fullWallUrl, "800")}
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-medium text-white">Sign form</p>
+                  <p className="text-xs text-zinc-500">
+                    Directly embed the signing experience
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-zinc-700"
+                  onClick={async () => {
+                    setCopyError(null);
+                    try {
+                      await navigator.clipboard.writeText(embedSignCode);
+                      setEmbedCopyFeedback("sign");
+                      setTimeout(() => setEmbedCopyFeedback(null), 1600);
+                    } catch {
+                      setCopyError("Failed to copy embed code.");
+                    }
+                  }}>
+                  {embedCopyFeedback === "sign" ? "Copied!" : "Copy"}
+                </Button>
+              </div>
+              {renderEmbedPreview(`${fullWallUrl}/sign`, "900")}
+            </div>
+          </dd>
         </div>
       </div>
 
