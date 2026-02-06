@@ -9,6 +9,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { SignWallDialog } from "@/components/wall/sign-wall-dialog";
 import { EntriesList } from "@/components/wall/entries-list";
+import { LogoMark } from "@/components/brand/logo";
 
 // Component to display cover image
 function CoverImage({ storageId }: { storageId: Id<"_storage"> }) {
@@ -277,8 +278,9 @@ export default function PublicWallPage() {
             Powered by{" "}
             <Link
               href="/"
-              className="hover:opacity-80 transition-opacity"
+              className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity"
               style={{ color: primaryColor }}>
+              <LogoMark className="size-5" iconClassName="size-3.5" />
               Memory Well
             </Link>
           </p>

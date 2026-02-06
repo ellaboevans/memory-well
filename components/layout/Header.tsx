@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { LogoMark } from "@/components/brand/logo";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -26,9 +27,7 @@ export function Header() {
         <nav className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative size-8 rounded-lg bg-linear-to-br from-white to-white/60 flex items-center justify-center">
-              <span className="text-black font-bold text-sm">M</span>
-            </div>
+            <LogoMark className="size-8" iconClassName="size-4" />
             <span className="font-semibold text-lg tracking-tight">
               Memory Well
             </span>

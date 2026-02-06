@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
+import { LogoMark } from "@/components/brand/logo";
 
 const navigation = [
   {
@@ -73,9 +74,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
         {/* Logo */}
         <div className="flex h-16 items-center border-b border-zinc-800 px-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
-              <span className="text-sm font-bold text-black">M</span>
-            </div>
+            <LogoMark className="h-8 w-8" iconClassName="size-4" />
             <span className="hidden text-lg font-semibold text-white lg:block">
               Memory Well
             </span>
@@ -168,9 +167,7 @@ export function DashboardHeader() {
               href="/"
               className="flex items-center gap-2"
               onClick={() => setMobileMenuOpen(false)}>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
-                <span className="text-sm font-bold text-black">M</span>
-              </div>
+              <LogoMark className="h-8 w-8" iconClassName="size-4" />
               <span className="text-lg font-semibold text-white">
                 Memory Well
               </span>
