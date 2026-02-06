@@ -1,10 +1,11 @@
 import { Webhooks } from "@polar-sh/nextjs";
 import { ConvexHttpClient } from "convex/browser";
+import { NextRequest } from "next/server";
 import { api } from "@/convex/_generated/api";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-export const POST = Webhooks({
+const webhookHandler = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
 
   // For one-time purchases, we use onOrderPaid
@@ -22,3 +23,7 @@ export const POST = Webhooks({
     }
   },
 });
+
+export async function POST(req: NextRequest) {
+  return webhookHandler(req);
+}
