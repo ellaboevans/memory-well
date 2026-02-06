@@ -7,6 +7,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Id } from "@/convex/_generated/dataModel";
+import { useRouter, useSearchParams } from "next/navigation";
+import { SignWallDialog } from "@/components/wall/sign-wall-dialog";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 // Component to display signature image
 function SignatureImage({ storageId }: { storageId: Id<"_storage"> }) {
@@ -55,6 +58,8 @@ function CoverImage({ storageId }: { storageId: Id<"_storage"> }) {
 export default function PublicWallPage() {
   const params = useParams();
   const slug = params?.slug as string;
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const wall = useQuery(api.walls.getBySlug, { slug });
   const entries = useQuery(
@@ -62,11 +67,41 @@ export default function PublicWallPage() {
     wall ? { wallId: wall._id } : "skip",
   );
   const [now, setNow] = useState(() => Date.now());
+  const [signDialogOpen, setSignDialogOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(timer);
   }, []);
+
+  const windowNotStarted =
+    wall?.entryWindowStart !== undefined && now < wall.entryWindowStart;
+  const windowClosed =
+    wall?.entryWindowEnd !== undefined && now > wall.entryWindowEnd;
+  const canSign = Boolean(
+    wall?.acceptingEntries && !windowNotStarted && !windowClosed,
+  );
+
+  useEffect(() => {
+    if (!canSign) return;
+    if (searchParams.get("sign") === "1") {
+      setSignDialogOpen(true);
+    }
+  }, [canSign, searchParams]);
+
+  const handleOpenSignDialog = () => {
+    if (!canSign) return;
+    setSignDialogOpen(true);
+    router.replace(`/wall/${slug}?sign=1`, { scroll: false });
+  };
+
+  const handleSignDialogChange = (open: boolean) => {
+    setSignDialogOpen(open);
+    if (!open && searchParams.get("sign") === "1") {
+      router.replace(`/wall/${slug}`, { scroll: false });
+    }
+  };
 
   // Loading state
   if (wall === undefined) {
@@ -102,12 +137,6 @@ export default function PublicWallPage() {
   const backgroundColor = theme.backgroundColor;
   const fontFamily = theme.fontFamily;
 
-  const windowNotStarted =
-    wall.entryWindowStart !== undefined && now < wall.entryWindowStart;
-  const windowClosed =
-    wall.entryWindowEnd !== undefined && now > wall.entryWindowEnd;
-  const canSign = wall.acceptingEntries && !windowNotStarted && !windowClosed;
-
   // Calculate contrast color for buttons (dark text on light bg, light text on dark bg)
   const isLightPrimary = Number.parseInt(primaryColor.slice(1), 16) > 0x7fffff;
   const buttonTextColor = isLightPrimary ? "#000000" : "#ffffff";
@@ -134,15 +163,16 @@ export default function PublicWallPage() {
           )}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             {canSign && (
-              <Link
-                href={`/wall/${slug}/sign`}
-                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm transition-opacity hover:opacity-90"
+              <button
+                type="button"
+                onClick={handleOpenSignDialog}
+                className="inline-flex items-center px-5 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm transition-opacity hover:opacity-90"
                 style={{
                   backgroundColor: primaryColor,
                   color: buttonTextColor,
                 }}>
                 Sign This Wall ✍️
-              </Link>
+              </button>
             )}
             <Link
               href={`/wall/${slug}/canvas`}
@@ -204,75 +234,97 @@ export default function PublicWallPage() {
               {entries.length} signature{entries.length === 1 ? "" : "s"}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
-              {entries.map((entry) => (
-                <div
-                  key={entry._id}
-                  className="rounded-lg p-4"
-                  style={{
-                    backgroundColor: cardBgColor,
-                    borderColor,
-                    borderWidth: 1,
-                  }}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3
-                        className="font-medium"
-                        style={{ color: primaryColor }}>
-                        {entry.name}
-                      </h3>
-                    </div>
-                    {entry.isVerified && (
-                      <span
-                        className="inline-flex items-center rounded-full bg-blue-600/20 p-1.5 text-blue-300"
-                        aria-label="Verified">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          className="h-6 w-6 fill-current">
-                          <path d="M12 2l1.8 2.3 2.9-.3.7 2.8 2.8.7-.3 2.9L22 12l-2.3 1.8.3 2.9-2.8.7-.7 2.8-2.9-.3L12 22l-1.8-2.3-2.9.3-.7-2.8-2.8-.7.3-2.9L2 12l2.3-1.8-.3-2.9 2.8-.7.7-2.8 2.9.3L12 2z" />
-                          <path
-                            className="text-blue-50"
-                            d="M10.2 13.6l-1.8-1.8-1.2 1.2 3 3 6-6-1.2-1.2-4.8 4.8z"
-                            fill="currentColor"
-                          />
-                        </svg>
-                      </span>
-                    )}
-                  </div>
-                  {entry.signatureImageId && (
-                    <SignatureImage storageId={entry.signatureImageId} />
-                  )}
-                  {entry.message && (
-                    <p
-                      className="mt-3 text-sm whitespace-pre-wrap opacity-80"
-                      style={{ color: primaryColor }}>
-                      {entry.message}
-                    </p>
-                  )}
-                  {entry.stickers && entry.stickers.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {entry.stickers.map((sticker, i) => (
-                        <span key={i + 1} className="text-lg">
-                          {sticker}
+              <AnimatePresence mode="popLayout">
+                {entries.map((entry, index) => (
+                  <motion.div
+                    key={entry._id}
+                    layout
+                    initial={
+                      reduceMotion
+                        ? false
+                        : { opacity: 0, y: 12, scale: 0.98 }
+                    }
+                    animate={
+                      reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }
+                    }
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+                    transition={{ duration: 0.25, delay: index * 0.02 }}
+                    className="rounded-lg p-4"
+                    style={{
+                      backgroundColor: cardBgColor,
+                      borderColor,
+                      borderWidth: 1,
+                    }}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3
+                          className="font-medium"
+                          style={{ color: primaryColor }}>
+                          {entry.name}
+                        </h3>
+                      </div>
+                      {entry.isVerified && (
+                        <span
+                          className="inline-flex items-center rounded-full bg-blue-600/20 p-1.5 text-blue-300"
+                          aria-label="Verified">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            className="h-6 w-6 fill-current">
+                            <path d="M12 2l1.8 2.3 2.9-.3.7 2.8 2.8.7-.3 2.9L22 12l-2.3 1.8.3 2.9-2.8.7-.7 2.8-2.9-.3L12 22l-1.8-2.3-2.9.3-.7-2.8-2.8-.7.3-2.9L2 12l2.3-1.8-.3-2.9 2.8-.7.7-2.8 2.9.3L12 2z" />
+                            <path
+                              className="text-blue-50"
+                              d="M10.2 13.6l-1.8-1.8-1.2 1.2 3 3 6-6-1.2-1.2-4.8 4.8z"
+                              fill="currentColor"
+                            />
+                          </svg>
                         </span>
-                      ))}
+                      )}
                     </div>
-                  )}
-                  <p
-                    className="mt-3 text-xs opacity-40"
-                    style={{ color: primaryColor }}>
-                    {new Date(entry._creationTime).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </p>
-                </div>
-              ))}
+                    {entry.signatureImageId && (
+                      <SignatureImage storageId={entry.signatureImageId} />
+                    )}
+                    {entry.message && (
+                      <p
+                        className="mt-3 text-sm whitespace-pre-wrap opacity-80"
+                        style={{ color: primaryColor }}>
+                        {entry.message}
+                      </p>
+                    )}
+                    {entry.stickers && entry.stickers.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {entry.stickers.map((sticker, i) => (
+                          <span key={i + 1} className="text-lg">
+                            {sticker}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p
+                      className="mt-3 text-xs opacity-40"
+                      style={{ color: primaryColor }}>
+                      {new Date(entry._creationTime).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </div>
         )}
       </main>
+
+      {wall && (
+        <SignWallDialog
+          open={signDialogOpen}
+          onOpenChange={handleSignDialogChange}
+          wall={wall}
+          primaryColor={primaryColor}
+        />
+      )}
 
       {/* Footer */}
       <footer

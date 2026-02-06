@@ -28,6 +28,7 @@ export default function WallCanvasPage() {
     return computeSignatureLayout<Doc<"entries">>(mapped);
   }, [entries]);
 
+
   if (wall === undefined || entries === undefined) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-zinc-950 text-zinc-400">
