@@ -231,7 +231,7 @@ export function SignWallDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex max-h-[100dvh] w-[100vw] max-w-none flex-col overflow-hidden rounded-none border-[var(--dialog-border)] bg-[var(--dialog-bg)] text-[var(--dialog-text)] sm:max-h-[90dvh] sm:max-w-2xl sm:rounded-2xl"
+        className="flex max-h-dvh w-screen max-w-none flex-col overflow-hidden rounded-none border-(--dialog-border) bg-(--dialog-bg) text-(--dialog-text) sm:max-h-[90dvh] sm:max-w-2xl sm:rounded-2xl"
         overlayClassName="!bg-[var(--dialog-overlay)]"
         overlayStyle={
           themeVars && "--dialog-overlay" in themeVars
@@ -241,122 +241,136 @@ export function SignWallDialog({
         style={themeVars}>
         <DialogHeader>
           <DialogTitle>Sign {wall.title}</DialogTitle>
-          <DialogDescription className="text-[var(--dialog-muted)]">
+          <DialogDescription className="text-(--dialog-muted)">
             Leave your signature and a message for this memory wall.
           </DialogDescription>
         </DialogHeader>
 
         <div className="mt-4 flex-1 overflow-y-auto pr-1">
           <form onSubmit={handleSubmit} className="space-y-5 pb-4">
-          {error && (
-            <div
-              className="rounded-lg border border-red-800 bg-red-900/50 p-4 text-sm text-red-200"
-              role="alert"
-              aria-live="polite">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-[var(--dialog-text)]">
-              Your Name <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-2 w-full rounded-md border border-[var(--dialog-input-border)] bg-[var(--dialog-input-bg)] px-3 py-2 text-[var(--dialog-text)] placeholder:text-[var(--dialog-muted)]"
-              aria-invalid={Boolean(fieldErrors.name)}
-              aria-describedby={fieldErrors.name ? "dialog-name-error" : undefined}
-            />
-            {fieldErrors.name && (
-              <p id="dialog-name-error" className="mt-1 text-xs text-red-400">
-                {fieldErrors.name}
-              </p>
+            {error && (
+              <div
+                className="rounded-lg border border-red-800 bg-red-900/50 p-4 text-sm text-red-200"
+                role="alert"
+                aria-live="polite">
+                {error}
+              </div>
             )}
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[var(--dialog-text)]">
-              Signature
-            </label>
-            <div className="mt-2 rounded-lg border border-[var(--dialog-input-border)] bg-[var(--dialog-input-bg)] p-2">
-              <SignaturePad onSignatureChange={handleSignatureChange} height={180} />
+            <div>
+              <label className="block text-sm font-medium text-(--dialog-text)">
+                Your Name <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-2 w-full rounded-md border border-(--dialog-input-border) bg-(--dialog-input-bg) px-3 py-2 text-(--dialog-text) placeholder:text-(--dialog-muted)"
+                aria-invalid={Boolean(fieldErrors.name)}
+                aria-describedby={
+                  fieldErrors.name ? "dialog-name-error" : undefined
+                }
+              />
+              {fieldErrors.name && (
+                <p id="dialog-name-error" className="mt-1 text-xs text-red-400">
+                  {fieldErrors.name}
+                </p>
+              )}
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[var(--dialog-text)]">
-              Message <span className="text-[var(--dialog-muted)]">(optional)</span>
-            </label>
-            <textarea
-              rows={4}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="mt-2 w-full rounded-md border border-[var(--dialog-input-border)] bg-[var(--dialog-input-bg)] px-3 py-2 text-[var(--dialog-text)] placeholder:text-[var(--dialog-muted)]"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-(--dialog-text)">
+                Signature
+              </label>
+              <div className="mt-2 rounded-lg border border-(--dialog-input-border) bg-(--dialog-input-bg) p-2">
+                <SignaturePad
+                  onSignatureChange={handleSignatureChange}
+                  height={180}
+                />
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[var(--dialog-text)]">
-              Email <span className="text-[var(--dialog-muted)]">(optional)</span>
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-md border border-[var(--dialog-input-border)] bg-[var(--dialog-input-bg)] px-3 py-2 text-[var(--dialog-text)] placeholder:text-[var(--dialog-muted)]"
-              placeholder="you@example.com"
-              aria-invalid={Boolean(fieldErrors.email)}
-              aria-describedby={fieldErrors.email ? "dialog-email-error" : undefined}
-            />
-            {fieldErrors.email && (
-              <p id="dialog-email-error" className="mt-1 text-xs text-red-400">
-                {fieldErrors.email}
+            <div>
+              <label className="block text-sm font-medium text-(--dialog-text)">
+                Message{" "}
+                <span className="text-(--dialog-muted)">(optional)</span>
+              </label>
+              <textarea
+                rows={4}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="mt-2 w-full rounded-md border border-(--dialog-input-border) bg-(--dialog-input-bg) px-3 py-2 text-(--dialog-text) placeholder:text-(--dialog-muted)"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-(--dialog-text)">
+                Email <span className="text-(--dialog-muted)">(optional)</span>
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-2 w-full rounded-md border border-(--dialog-input-border) bg-(--dialog-input-bg) px-3 py-2 text-(--dialog-text) placeholder:text-(--dialog-muted)"
+                placeholder="you@example.com"
+                aria-invalid={Boolean(fieldErrors.email)}
+                aria-describedby={
+                  fieldErrors.email ? "dialog-email-error" : undefined
+                }
+              />
+              {fieldErrors.email && (
+                <p
+                  id="dialog-email-error"
+                  className="mt-1 text-xs text-red-400">
+                  {fieldErrors.email}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-(--dialog-muted)">
+                Used for verification badge only.
               </p>
-            )}
-            <p className="mt-1 text-xs text-[var(--dialog-muted)]">
-              Used for verification badge only.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[var(--dialog-text)]">
-              Stickers <span className="text-[var(--dialog-muted)]">(up to 3)</span>
-            </label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {STICKER_OPTIONS.map((sticker) => (
-                <button
-                  key={sticker}
-                  type="button"
-                  onClick={() => toggleSticker(sticker)}
-                  className={`h-12 w-12 rounded-lg border text-2xl transition ${
-                    selectedStickers.includes(sticker)
-                      ? "border-[var(--dialog-text)] bg-[var(--dialog-input-bg)]"
-                      : "border-[var(--dialog-input-border)] bg-[var(--dialog-input-bg)] hover:opacity-80"
-                  }`}
-                  aria-pressed={selectedStickers.includes(sticker)}>
-                  {sticker}
-                </button>
-              ))}
             </div>
-          </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              className="border-zinc-700"
-              onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              style={{ backgroundColor: primaryColor, color: buttonTextColor }}>
-              {isSubmitting ? "Signing..." : "Sign the wall"}
-            </Button>
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-(--dialog-text)">
+                Stickers{" "}
+                <span className="text-(--dialog-muted)">(up to 3)</span>
+              </label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {STICKER_OPTIONS.map((sticker) => (
+                  <button
+                    key={sticker}
+                    type="button"
+                    onClick={() => toggleSticker(sticker)}
+                    className={`h-12 w-12 rounded-lg border text-2xl transition ${
+                      selectedStickers.includes(sticker)
+                        ? "border-(--dialog-text) bg-(--dialog-input-bg)"
+                        : "border-(--dialog-input-border) bg-(--dialog-input-bg) hover:opacity-80"
+                    }`}
+                    aria-pressed={selectedStickers.includes(sticker)}>
+                    {sticker}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-zinc-700"
+                onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                style={{
+                  backgroundColor: primaryColor,
+                  color: buttonTextColor,
+                }}>
+                {isSubmitting ? "Signing..." : "Sign the wall"}
+              </Button>
+            </div>
           </form>
         </div>
       </DialogContent>
