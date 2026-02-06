@@ -6,7 +6,7 @@ import { getWallDisplayUrl, getWallUrl } from "@/lib/config";
 import { useParams, useRouter } from "next/navigation";
 import { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Check,
@@ -17,6 +17,7 @@ import {
   EyeOff,
   Trash2,
   MoreHorizontal,
+  ChevronDown,
 } from "lucide-react";
 import {
   ChartContainer,
@@ -111,6 +112,9 @@ export default function WallDetailPage() {
     null,
   );
   const [actionError, setActionError] = useState<string | null>(null);
+  const [expandedEntryId, setExpandedEntryId] = useState<Id<"entries"> | null>(
+    null,
+  );
 
   const handleDeleteWall = async () => {
     setActionError(null);
@@ -270,139 +274,186 @@ export default function WallDetailPage() {
               <thead className="border-b border-zinc-800 bg-zinc-950/70 text-zinc-400">
                 <tr>
                   <th className="px-4 py-3 text-left font-medium">Name</th>
-                  <th className="px-4 py-3 text-left font-medium">Message</th>
-                  <th className="px-4 py-3 text-left font-medium">Stickers</th>
                   <th className="px-4 py-3 text-left font-medium">Date</th>
-                  <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Visibility
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Verification
+                  </th>
                   <th className="px-4 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800">
-                {entries.map((entry) => (
-                  <tr
-                    key={entry._id}
-                    className={entry.isHidden ? "opacity-60" : undefined}>
-                    <td className="px-4 py-3 text-white">{entry.name}</td>
-                    <td className="px-4 py-3 text-zinc-300">
-                      <span className="line-clamp-2">
-                        {entry.message || "—"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-lg">
-                      {entry.stickers && entry.stickers.length > 0
-                        ? entry.stickers.join(" ")
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-400">
-                      {new Date(entry._creationTime).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        {entry.isVerified && (
-                          <span className="inline-flex items-center rounded-full bg-blue-600/20 px-2 py-0.5 text-blue-300">
-                            Verified
-                          </span>
-                        )}
-                        {entry.isHidden && (
-                          <span className="inline-flex items-center rounded-full bg-zinc-700 px-2 py-0.5 text-zinc-300">
-                            Hidden
-                          </span>
-                        )}
-                        {!entry.isVerified && !entry.isHidden && (
-                          <span className="text-zinc-500">—</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              className="rounded-md border border-zinc-800 p-2 text-zinc-400 hover:text-white transition-colors"
-                              aria-label="Entry actions">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="end"
-                            className="bg-zinc-900 w-45 border-zinc-800 text-white">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span>
-                                    <DropdownMenuItem
-                                      onClick={async () => {
-                                        setActionError(null);
-                                        if (!isPremium) {
-                                          setActionError(
-                                            "Verification badges require Premium.",
-                                          );
-                                          return;
-                                        }
-                                        try {
-                                          await toggleVerified({
-                                            entryId: entry._id,
-                                          });
-                                        } catch (err) {
-                                          setActionError(
-                                            err instanceof Error
-                                              ? err.message
-                                              : "Failed to update verification",
-                                          );
-                                        }
-                                      }}
-                                      disabled={!isPremium}
-                                      className="gap-2">
-                                      <BadgeCheck className="h-4 w-4" />
-                                      {entry.isVerified
-                                        ? "Unverify entry"
-                                        : "Verify entry"}
-                                    </DropdownMenuItem>
-                                  </span>
-                                </TooltipTrigger>
-                                {!isPremium && (
-                                  <TooltipContent>
-                                    Upgrade to use verification
-                                  </TooltipContent>
-                                )}
-                              </Tooltip>
-                            </TooltipProvider>
-                            <DropdownMenuItem
-                              onClick={async () => {
-                                setActionError(null);
-                                try {
-                                  await toggleHidden({
-                                    entryId: entry._id,
-                                  });
-                                } catch (err) {
-                                  setActionError(
-                                    err instanceof Error
-                                      ? err.message
-                                      : "Failed to update visibility",
-                                  );
-                                }
-                              }}
-                              className="gap-2">
-                              {entry.isHidden ? (
-                                <Eye className="h-4 w-4" />
-                              ) : (
-                                <EyeOff className="h-4 w-4" />
+                {entries.map((entry) => {
+                  const isExpanded = expandedEntryId === entry._id;
+                  return (
+                    <React.Fragment key={entry?._id}>
+                      <tr className={entry.isHidden ? "opacity-60" : undefined}>
+                        <td className="px-4 py-3 text-white">
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-2 text-left text-white hover:text-white"
+                            onClick={() =>
+                              setExpandedEntryId(isExpanded ? null : entry._id)
+                            }>
+                            <ChevronDown
+                              className={`h-4 w-4 transition-transform ${
+                                isExpanded ? "rotate-180" : "rotate-0"
+                              }`}
+                            />
+                            {entry.name}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3 text-zinc-400">
+                          {new Date(entry._creationTime).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3">
+                          {entry.isHidden ? (
+                            <span className="inline-flex items-center rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
+                              Hidden
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-emerald-600/20 px-2 py-0.5 text-xs text-emerald-300">
+                              Visible
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {entry.isVerified ? (
+                            <span className="inline-flex items-center rounded-full bg-blue-600/20 px-2 py-0.5 text-xs text-blue-300">
+                              Verified
+                            </span>
+                          ) : (
+                            <span className="text-xs text-zinc-500">
+                              Unverified
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  className="rounded-md border border-zinc-800 p-2 text-zinc-400 hover:text-white transition-colors"
+                                  aria-label="Entry actions">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="end"
+                                className="bg-zinc-900 w-45 border-zinc-800 text-white">
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span>
+                                        <DropdownMenuItem
+                                          onClick={async () => {
+                                            setActionError(null);
+                                            if (!isPremium) {
+                                              setActionError(
+                                                "Verification badges require Premium.",
+                                              );
+                                              return;
+                                            }
+                                            try {
+                                              await toggleVerified({
+                                                entryId: entry._id,
+                                              });
+                                            } catch (err) {
+                                              setActionError(
+                                                err instanceof Error
+                                                  ? err.message
+                                                  : "Failed to update verification",
+                                              );
+                                            }
+                                          }}
+                                          disabled={!isPremium}
+                                          className="gap-2">
+                                          <BadgeCheck className="h-4 w-4" />
+                                          {entry.isVerified
+                                            ? "Unverify entry"
+                                            : "Verify entry"}
+                                        </DropdownMenuItem>
+                                      </span>
+                                    </TooltipTrigger>
+                                    {!isPremium && (
+                                      <TooltipContent>
+                                        Upgrade to use verification
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
+                                <DropdownMenuItem
+                                  onClick={async () => {
+                                    setActionError(null);
+                                    try {
+                                      await toggleHidden({
+                                        entryId: entry._id,
+                                      });
+                                    } catch (err) {
+                                      setActionError(
+                                        err instanceof Error
+                                          ? err.message
+                                          : "Failed to update visibility",
+                                      );
+                                    }
+                                  }}
+                                  className="gap-2">
+                                  {entry.isHidden ? (
+                                    <Eye className="h-4 w-4" />
+                                  ) : (
+                                    <EyeOff className="h-4 w-4" />
+                                  )}
+                                  {entry.isHidden ? "Show entry" : "Hide entry"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setDeletingEntryId(entry._id)}
+                                  variant="destructive"
+                                  className="gap-2">
+                                  <Trash2 className="h-4 w-4" />
+                                  Delete entry
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr className="bg-zinc-950/40">
+                        <td colSpan={5} className="px-4 pb-4 pt-1">
+                          <div
+                            className={`overflow-hidden transition-all duration-200 ease-out ${
+                              isExpanded
+                                ? "max-h-96 mt-3 opacity-100"
+                                : "max-h-0 opacity-0"
+                            }`}>
+                            <div className="rounded-md border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-300">
+                              {entry.message && (
+                                <p className="whitespace-pre-wrap">
+                                  {entry.message}
+                                </p>
                               )}
-                              {entry.isHidden ? "Show entry" : "Hide entry"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => setDeletingEntryId(entry._id)}
-                              variant="destructive"
-                              className="gap-2">
-                              <Trash2 className="h-4 w-4" />
-                              Delete entry
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                              {entry.stickers && entry.stickers.length > 0 && (
+                                <div className="mt-3 flex flex-wrap gap-2 text-lg">
+                                  {entry.stickers.map((sticker) => (
+                                    <span key={sticker}>{sticker}</span>
+                                  ))}
+                                </div>
+                              )}
+                              {!entry.message &&
+                                (!entry.stickers ||
+                                  entry.stickers.length === 0) && (
+                                  <p className="text-zinc-500">
+                                    No message or stickers.
+                                  </p>
+                                )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
