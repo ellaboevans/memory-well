@@ -10,16 +10,17 @@ interface WallLayoutProps {
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  if (!params?.slug) {
+  const resolved = await params;
+  if (!resolved?.slug) {
     return {
       title: "Memory Well",
       description: "Sign this memory wall and leave your message.",
       robots: { index: false, follow: false },
     };
   }
-  const wall = await fetchQuery(api.walls.getBySlug, { slug: params.slug });
+  const wall = await fetchQuery(api.walls.getBySlug, { slug: resolved.slug });
 
   if (!wall) {
     return {

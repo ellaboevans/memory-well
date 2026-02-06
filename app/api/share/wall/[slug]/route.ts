@@ -29,7 +29,10 @@ export async function GET(
   const primary = wall.theme.primaryColor;
   const background = wall.theme.backgroundColor;
 
-  const SITE_URL = process.env.NEXT_PUBLIC_APP_URL as string;
+  const siteLabel =
+    process.env.NEXT_PUBLIC_APP_DOMAIN ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    "memorywell.app";
 
   const element = React.createElement(
     "div",
@@ -41,29 +44,68 @@ export async function GET(
         flexDirection: "column",
         justifyContent: "space-between",
         padding: "64px",
-        background: background,
+        background: `radial-gradient(1200px 630px at 0% 0%, ${primary}22, transparent 60%), linear-gradient(135deg, ${background}, ${background})`,
         color: primary,
         fontFamily: "sans-serif",
       },
     },
     React.createElement(
       "div",
-      { style: { display: "flex", flexDirection: "column", gap: "12px" } },
+      {
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+        },
+      },
       React.createElement(
         "div",
         {
           style: {
-            fontSize: "14px",
-            letterSpacing: "0.4em",
-            textTransform: "uppercase",
-            opacity: 0.7,
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
           },
         },
-        "Memory Well",
+        React.createElement(
+          "div",
+          {
+            style: {
+              fontSize: "13px",
+              letterSpacing: "0.4em",
+              textTransform: "uppercase",
+              opacity: 0.75,
+            },
+          },
+          "Memory Well",
+        ),
+        React.createElement(
+          "div",
+          {
+            style: {
+              fontSize: "12px",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              padding: "6px 12px",
+              borderRadius: "999px",
+              border: `1px solid ${primary}55`,
+              color: primary,
+              opacity: 0.85,
+            },
+          },
+          "Shareable Wall",
+        ),
       ),
       React.createElement(
         "div",
-        { style: { fontSize: "56px", fontWeight: 700, lineHeight: 1.1 } },
+        {
+          style: {
+            fontSize: "60px",
+            fontWeight: 700,
+            lineHeight: 1.05,
+            maxWidth: "980px",
+          },
+        },
         title,
       ),
       React.createElement(
@@ -71,8 +113,8 @@ export async function GET(
         {
           style: {
             fontSize: "24px",
-            maxWidth: "800px",
-            opacity: 0.7,
+            maxWidth: "860px",
+            opacity: 0.75,
             lineHeight: 1.4,
           },
         },
@@ -87,11 +129,39 @@ export async function GET(
           alignItems: "center",
           justifyContent: "space-between",
           fontSize: "20px",
-          opacity: 0.8,
+          opacity: 0.85,
         },
       },
-      React.createElement("div", null, `${count} signatures`),
-      React.createElement("div", null, SITE_URL),
+      React.createElement(
+        "div",
+        {
+          style: {
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+          },
+        },
+        React.createElement(
+          "div",
+          {
+            style: {
+              padding: "8px 14px",
+              borderRadius: "12px",
+              background: `${primary}22`,
+              border: `1px solid ${primary}55`,
+            },
+          },
+          `${count} signatures`,
+        ),
+        React.createElement(
+          "div",
+          {
+            style: { fontSize: "16px", opacity: 0.7 },
+          },
+          "Signatures from around the world",
+        ),
+      ),
+      React.createElement("div", null, siteLabel),
     ),
   );
 

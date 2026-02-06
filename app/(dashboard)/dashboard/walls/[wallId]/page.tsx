@@ -112,6 +112,8 @@ export default function WallDetailPage() {
     null,
   );
   const [actionError, setActionError] = useState<string | null>(null);
+  const [shareImageOpen, setShareImageOpen] = useState(false);
+  const [isShareImageLoading, setIsShareImageLoading] = useState(false);
   const [expandedEntryId, setExpandedEntryId] = useState<Id<"entries"> | null>(
     null,
   );
@@ -604,8 +606,8 @@ export default function WallDetailPage() {
                 variant="outline"
                 className="border-zinc-700"
                 onClick={() => {
-                  if (!wall) return;
-                  window.open(`/api/share/wall/${wall.slug}`, "_blank");
+                  setIsShareImageLoading(true);
+                  setShareImageOpen(true);
                 }}>
                 Share Image
               </Button>
@@ -851,6 +853,54 @@ export default function WallDetailPage() {
             <Button type="button" disabled={!qrDataUrl} asChild>
               <a href={qrDataUrl ?? undefined} download={`${wall.slug}-qr.png`}>
                 Download
+              </a>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={shareImageOpen} onOpenChange={setShareImageOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Share image</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Preview and download a shareable image of this wall.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center py-4">
+            {wall && (
+              <div className="relative w-full">
+                {isShareImageLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950/60 text-sm text-zinc-400">
+                    Loading image…
+                  </div>
+                )}
+                <Image
+                  src={`/api/share/wall/${wall.slug}`}
+                  alt="Shareable wall image"
+                  width={1200}
+                  height={630}
+                  onLoadingComplete={() => setIsShareImageLoading(false)}
+                  className={`h-auto w-full rounded-lg border border-zinc-800 ${
+                    isShareImageLoading ? "opacity-0" : "opacity-100"
+                  }`}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-zinc-700"
+              onClick={() => setShareImageOpen(false)}>
+              Close
+            </Button>
+            <Button type="button" asChild disabled={!wall}>
+              <a
+                href={wall ? `/api/share/wall/${wall.slug}` : undefined}
+                download={`${wall?.slug}-share.png`}>
+                Download image
               </a>
             </Button>
           </DialogFooter>
