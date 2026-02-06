@@ -47,6 +47,8 @@ export default function WallDetailPage() {
   const wallId = params.wallId as Id<"walls">;
 
   const wall = useQuery(api.walls.get, { wallId });
+  const profile = useQuery(api.profiles.me);
+  const isPremium = profile?.tier === "premium";
   const entries = useQuery(
     api.entries.listByWall,
     wall ? { wallId: wall._id } : "skip",
@@ -177,7 +179,7 @@ export default function WallDetailPage() {
     };
   }, [fullWallUrl, qrDarkColor, qrLightColor, qrMargin, qrSize]);
 
-  if (wall === undefined) {
+  if (wall === undefined || profile === undefined) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-pulse text-zinc-400">Loading...</div>
@@ -294,6 +296,12 @@ export default function WallDetailPage() {
                       <button
                         onClick={async () => {
                           setActionError(null);
+                          if (!isPremium) {
+                            setActionError(
+                              "Verification badges require Premium.",
+                            );
+                            return;
+                          }
                           try {
                             await toggleVerified({ entryId: entry._id });
                           } catch (err) {
@@ -319,9 +327,11 @@ export default function WallDetailPage() {
                       </button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {entry.isVerified
-                        ? "Remove verification"
-                        : "Mark as verified"}
+                      {!isPremium
+                        ? "Upgrade to use verification"
+                        : entry.isVerified
+                          ? "Remove verification"
+                          : "Mark as verified"}
                     </TooltipContent>
                   </Tooltip>
                   <Tooltip>

@@ -228,6 +228,25 @@ export const update = mutation({
       });
     }
 
+    if (args.theme) {
+      const profile = await ctx.db
+        .query("profiles")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .unique();
+      const tier = profile?.tier ?? "free";
+      const themeChanged =
+        args.theme.primaryColor !== wall.theme.primaryColor ||
+        args.theme.backgroundColor !== wall.theme.backgroundColor ||
+        args.theme.fontFamily !== wall.theme.fontFamily;
+
+      if (tier !== "premium" && themeChanged) {
+        throw new ConvexError({
+          code: "PREMIUM_REQUIRED",
+          message: "Theme customization is a premium feature.",
+        });
+      }
+    }
+
     const { wallId, ...updates } = args;
 
     // Filter out undefined values but keep null (for explicitly clearing fields like coverImageId)

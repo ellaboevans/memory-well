@@ -73,8 +73,10 @@ export default function EditWallPage() {
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const wall = useQuery(api.walls.get, { wallId });
+  const profile = useQuery(api.profiles.me);
   const updateWall = useMutation(api.walls.update);
   const generateUploadUrl = useMutation(api.walls.generateUploadUrl);
+  const isPremium = profile?.tier === "premium";
 
   // Get cover image URL if exists
   const coverImageUrl = useQuery(
@@ -235,7 +237,7 @@ export default function EditWallPage() {
     }
   };
 
-  if (wall === undefined) {
+  if (wall === undefined || profile === undefined) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-pulse text-zinc-400">Loading...</div>
@@ -310,7 +312,13 @@ export default function EditWallPage() {
       });
       router.push(`/dashboard/walls/${wallId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update wall");
+      const message =
+        err instanceof Error ? err.message : "Failed to update wall";
+      if (message.toLowerCase().includes("premium")) {
+        setError("Theme customization is a Premium feature. Upgrade to edit.");
+      } else {
+        setError(message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -480,6 +488,18 @@ export default function EditWallPage() {
               Theme & Appearance
             </h3>
 
+            {!isPremium && (
+              <div className="mb-6 rounded-lg border border-dashed border-zinc-800 bg-zinc-900/60 p-4 text-sm text-zinc-400">
+                Theme customization is a Premium feature.{" "}
+                <Link
+                  href="/dashboard/billing"
+                  className="text-white underline underline-offset-4">
+                  Upgrade to Premium
+                </Link>
+                .
+              </div>
+            )}
+
             {/* Color Presets */}
             <div className="mb-6">
               <label
@@ -487,12 +507,15 @@ export default function EditWallPage() {
                 className="block text-sm font-medium text-zinc-300 mb-2">
                 Color Presets
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div
+                className={`grid grid-cols-3 gap-2 ${!isPremium ? "opacity-60" : ""}`}>
                 {COLOR_PRESETS.map((preset) => (
                   <button
                     key={preset.name}
                     type="button"
+                    disabled={!isPremium}
                     onClick={() => {
+                      if (!isPremium) return;
                       setPrimaryColor(preset.primary);
                       setBackgroundColor(preset.background);
                     }}
@@ -533,12 +556,14 @@ export default function EditWallPage() {
                     id="primaryColor"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
+                    disabled={!isPremium}
                     className="h-10 w-14 rounded border border-zinc-700 bg-zinc-800 cursor-pointer"
                   />
                   <input
                     type="text"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
+                    disabled={!isPremium}
                     className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white text-sm font-mono"
                   />
                 </div>
@@ -555,12 +580,14 @@ export default function EditWallPage() {
                     id="backgroundColor"
                     value={backgroundColor}
                     onChange={(e) => setBackgroundColor(e.target.value)}
+                    disabled={!isPremium}
                     className="h-10 w-14 rounded border border-zinc-700 bg-zinc-800 cursor-pointer"
                   />
                   <input
                     type="text"
                     value={backgroundColor}
                     onChange={(e) => setBackgroundColor(e.target.value)}
+                    disabled={!isPremium}
                     className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white text-sm font-mono"
                   />
                 </div>
@@ -578,6 +605,7 @@ export default function EditWallPage() {
                 id="fontFamily"
                 value={fontFamily}
                 onChange={(e) => setFontFamily(e.target.value)}
+                disabled={!isPremium}
                 className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-white">
                 {FONT_OPTIONS.map((font) => (
                   <option key={font.value} value={font.value}>

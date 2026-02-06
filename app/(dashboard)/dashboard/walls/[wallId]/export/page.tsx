@@ -30,6 +30,8 @@ export default function ExportWallPage() {
     api.entries.listByWall,
     wall ? { wallId: wall._id, limit: 500 } : "skip",
   );
+  const profile = useQuery(api.profiles.me);
+  const isPremium = profile?.tier === "premium";
 
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [layout, setLayout] = useState<ExportLayout>("grid");
@@ -106,7 +108,7 @@ export default function ExportWallPage() {
   }, [wall, format]);
 
   // Loading state
-  if (wall === undefined || entries === undefined) {
+  if (wall === undefined || entries === undefined || profile === undefined) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-pulse text-zinc-400">Loading...</div>
@@ -127,6 +129,32 @@ export default function ExportWallPage() {
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black bg-white hover:bg-zinc-200 transition-colors">
           Back to Dashboard
         </Link>
+      </div>
+    );
+  }
+
+  if (!isPremium) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-6">
+          <Link
+            href={`/dashboard/walls/${wallId}`}
+            className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Wall
+          </Link>
+        </div>
+        <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/60 p-8 text-center">
+          <h1 className="text-2xl font-bold text-white mb-2">
+            Export is a Premium feature
+          </h1>
+          <p className="text-zinc-400 mb-6">
+            Upgrade to Premium to export your memory wall as PDF or images.
+          </p>
+          <Button asChild>
+            <Link href="/dashboard/billing">Upgrade to Premium</Link>
+          </Button>
+        </div>
       </div>
     );
   }

@@ -41,12 +41,14 @@ export default function DashboardPage() {
   const profile = useQuery(api.profiles.me);
   const walls = useQuery(api.walls.listMyWalls);
   const [daysFilter, setDaysFilter] = useState<7 | 30 | 90>(30);
-  const metrics = useQuery(api.analytics.getDashboardMetrics, {
-    days: daysFilter,
-  });
+  const isPremium = profile?.tier === "premium";
+  const metrics = useQuery(
+    api.analytics.getDashboardMetrics,
+    isPremium ? { days: daysFilter } : "skip",
+  );
 
   const isWallsLoading = walls === undefined;
-  const isMetricsLoading = metrics === undefined;
+  const isMetricsLoading = metrics === undefined && isPremium;
 
   const totalSignatures =
     walls?.reduce((acc, wall) => acc + (wall.entryCount ?? 0), 0) ?? 0;
@@ -283,7 +285,8 @@ export default function DashboardPage() {
                     ? ""
                     : "border-zinc-700 text-zinc-300 hover:bg-zinc-800"
                 }
-                onClick={() => setDaysFilter(range as 7 | 30 | 90)}>
+                onClick={() => setDaysFilter(range as 7 | 30 | 90)}
+                disabled={!isPremium}>
                 {range}d
               </Button>
             ))}
@@ -297,29 +300,46 @@ export default function DashboardPage() {
                   Total Signatures
                 </CardTitle>
                 <CardDescription className="text-zinc-500">
-                  {isMetricsLoading
-                    ? "Loading activity..."
-                    : `${daysFilter === 7 ? metrics?.last7 : daysFilter === 30 ? metrics?.last30 : metrics?.last90} in the last ${daysFilter} days`}
+                  {!isPremium
+                    ? "Upgrade to Premium to unlock analytics."
+                    : isMetricsLoading
+                      ? "Loading activity..."
+                      : `${daysFilter === 7 ? metrics?.last7 : daysFilter === 30 ? metrics?.last30 : metrics?.last90} in the last ${daysFilter} days`}
                 </CardDescription>
               </div>
-              <div className="flex gap-4 text-sm text-zinc-400">
-                <div>
-                  <div className="text-white font-semibold">
-                    {metrics ? metrics.last7 : 0}
+              {isPremium ? (
+                <div className="flex gap-4 text-sm text-zinc-400">
+                  <div>
+                    <div className="text-white font-semibold">
+                      {metrics ? metrics.last7 : 0}
+                    </div>
+                    <div className="text-xs text-zinc-500">Last 7 days</div>
                   </div>
-                  <div className="text-xs text-zinc-500">Last 7 days</div>
-                </div>
-                <div>
-                  <div className="text-white font-semibold">
-                    {metrics ? metrics.total : 0}
+                  <div>
+                    <div className="text-white font-semibold">
+                      {metrics ? metrics.total : 0}
+                    </div>
+                    <div className="text-xs text-zinc-500">Total</div>
                   </div>
-                  <div className="text-xs text-zinc-500">Total</div>
                 </div>
-              </div>
+              ) : (
+                <Button asChild size="sm">
+                  <Link href="/dashboard/billing">Upgrade</Link>
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent>
-            {isMetricsLoading ? (
+            {!isPremium ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-zinc-800 bg-zinc-900/60 px-6 py-10 text-center">
+                <div className="text-sm text-zinc-400">
+                  Analytics are available on Premium.
+                </div>
+                <Button asChild size="sm">
+                  <Link href="/dashboard/billing">Upgrade to Premium</Link>
+                </Button>
+              </div>
+            ) : isMetricsLoading ? (
               <div className="h-[240px] w-full animate-pulse rounded-lg bg-zinc-800" />
             ) : (
               <ChartContainer

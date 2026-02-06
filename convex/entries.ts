@@ -240,6 +240,19 @@ export const toggleVerified = mutation({
       throw new ConvexError({ code: "FORBIDDEN", message: "Not authorized" });
     }
 
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .unique();
+    const tier = profile?.tier ?? "free";
+
+    if (tier !== "premium") {
+      throw new ConvexError({
+        code: "PREMIUM_REQUIRED",
+        message: "Verification badges are a premium feature.",
+      });
+    }
+
     const nextVerified = !entry.isVerified;
     await ctx.db.patch(args.entryId, { isVerified: nextVerified });
 
