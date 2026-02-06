@@ -5,6 +5,12 @@ import { memo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ELEMENT_HEIGHT, ELEMENT_WIDTH } from "../lib/signature-layout";
 
 interface SignatureElementProps {
@@ -59,13 +65,22 @@ export const SignatureElement = memo(function SignatureElement({
           <div className="h-full w-full rounded bg-zinc-900/40" />
         )}
       </div>
-      <button
-        type="button"
-        data-element="true"
-        aria-label={`Open signature by ${signature.name}`}
-        onClick={handleClick}
-        className="signature-hit"
-      />
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              data-element="true"
+              aria-label={`Open signature by ${signature.name}`}
+              onClick={handleClick}
+              className="signature-hit"
+            />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs">
+            By: {signature.name || "Anonymous"}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 });
