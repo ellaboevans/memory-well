@@ -142,7 +142,11 @@ export function WallCanvas({
         onZoomTo100={zoomTo100}
       />
 
-      <SignatureDialogController ref={dialogRef} />
+      <SignatureDialogController
+        ref={dialogRef}
+        primaryColor={primaryColor}
+        backgroundColor={backgroundColor}
+      />
     </>
   );
 }

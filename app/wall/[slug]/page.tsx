@@ -227,6 +227,7 @@ export default function PublicWallPage() {
           onOpenChange={handleSignDialogChange}
           wall={wall}
           primaryColor={primaryColor}
+          backgroundColor={backgroundColor}
         />
       )}
 

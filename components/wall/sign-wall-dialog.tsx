@@ -33,6 +33,7 @@ interface SignWallDialogProps {
   onOpenChange: (open: boolean) => void;
   wall: Doc<"walls">;
   primaryColor: string;
+  backgroundColor: string;
 }
 
 export function SignWallDialog({
@@ -40,6 +41,7 @@ export function SignWallDialog({
   onOpenChange,
   wall,
   primaryColor,
+  backgroundColor,
 }: SignWallDialogProps) {
   const createEntry = useMutation(api.entries.create);
   const generateUploadUrl = useMutation(api.entries.generateUploadUrl);
@@ -58,6 +60,67 @@ export function SignWallDialog({
       Number.parseInt(primaryColor.slice(1), 16) > 0x7fffff;
     return isLightPrimary ? "#000000" : "#ffffff";
   }, [primaryColor]);
+
+  const themeVars = useMemo(() => {
+    const toRgb = (hex: string) => {
+      const value = hex.replace("#", "");
+      const r = Number.parseInt(value.slice(0, 2), 16);
+      const g = Number.parseInt(value.slice(2, 4), 16);
+      const b = Number.parseInt(value.slice(4, 6), 16);
+      return { r, g, b };
+    };
+
+    const mix = (base: string, mixin: string, weight: number) => {
+      const a = toRgb(base);
+      const b = toRgb(mixin);
+      const w = Math.min(Math.max(weight, 0), 1);
+      const r = Math.round(a.r * (1 - w) + b.r * w);
+      const g = Math.round(a.g * (1 - w) + b.g * w);
+      const bCh = Math.round(a.b * (1 - w) + b.b * w);
+      return `rgb(${r} ${g} ${bCh})`;
+    };
+
+    const luminance = (hex: string) => {
+      const { r, g, b } = toRgb(hex);
+      const [rs, gs, bs] = [r, g, b].map((v) => {
+        const s = v / 255;
+        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+    };
+
+    const isLightBg = luminance(backgroundColor) > 0.55;
+    const panelBg = backgroundColor;
+    const panelBorder = isLightBg
+      ? mix(backgroundColor, "#000000", 0.2)
+      : mix(backgroundColor, "#ffffff", 0.2);
+    const panelMuted = isLightBg
+      ? "rgba(15, 23, 42, 0.65)"
+      : "rgba(226, 232, 240, 0.65)";
+    const panelText = isLightBg ? "#0f172a" : "#f8fafc";
+    const inputBg = isLightBg
+      ? mix(backgroundColor, "#ffffff", 0.9)
+      : mix(backgroundColor, "#ffffff", 0.08);
+    const inputBorder = isLightBg
+      ? mix(backgroundColor, "#000000", 0.18)
+      : mix(backgroundColor, "#ffffff", 0.18);
+    const overlay = isLightBg
+      ? "rgba(15, 23, 42, 0.35)"
+      : "rgba(2, 6, 23, 0.6)";
+
+    return {
+      "--dialog-bg": panelBg,
+      "--dialog-border": panelBorder,
+      "--dialog-text": panelText,
+      "--dialog-muted": panelMuted,
+      "--dialog-input-bg": inputBg,
+      "--dialog-input-border": inputBorder,
+      "--dialog-overlay": overlay,
+      backgroundColor: panelBg,
+      borderColor: panelBorder,
+      color: panelText,
+    } as React.CSSProperties;
+  }, [backgroundColor]);
 
   const handleSignatureChange = useCallback((dataUrl: string | null) => {
     setSignatureDataUrl(dataUrl);
@@ -167,10 +230,18 @@ export function SignWallDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[100dvh] w-[100vw] max-w-none flex-col overflow-hidden rounded-none border-zinc-800 bg-zinc-950 text-white sm:max-h-[90dvh] sm:max-w-2xl sm:rounded-2xl">
+      <DialogContent
+        className="flex max-h-[100dvh] w-[100vw] max-w-none flex-col overflow-hidden rounded-none border-[var(--dialog-border)] bg-[var(--dialog-bg)] text-[var(--dialog-text)] sm:max-h-[90dvh] sm:max-w-2xl sm:rounded-2xl"
+        overlayClassName="!bg-[var(--dialog-overlay)]"
+        overlayStyle={
+          themeVars && "--dialog-overlay" in themeVars
+            ? { backgroundColor: themeVars["--dialog-overlay"] as string }
+            : undefined
+        }
+        style={themeVars}>
         <DialogHeader>
           <DialogTitle>Sign {wall.title}</DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogDescription className="text-[var(--dialog-muted)]">
             Leave your signature and a message for this memory wall.
           </DialogDescription>
         </DialogHeader>
@@ -179,7 +250,7 @@ export function SignWallDialog({
           <form onSubmit={handleSubmit} className="space-y-5 pb-4">
           {error && (
             <div
-              className="bg-red-900/50 border border-red-800 rounded-lg p-4 text-red-200 text-sm"
+              className="rounded-lg border border-red-800 bg-red-900/50 p-4 text-sm text-red-200"
               role="alert"
               aria-live="polite">
               {error}
@@ -187,14 +258,14 @@ export function SignWallDialog({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-zinc-200">
+            <label className="block text-sm font-medium text-[var(--dialog-text)]">
               Your Name <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-white"
+              className="mt-2 w-full rounded-md border border-[var(--dialog-input-border)] bg-[var(--dialog-input-bg)] px-3 py-2 text-[var(--dialog-text)] placeholder:text-[var(--dialog-muted)]"
               aria-invalid={Boolean(fieldErrors.name)}
               aria-describedby={fieldErrors.name ? "dialog-name-error" : undefined}
             />
@@ -206,35 +277,35 @@ export function SignWallDialog({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-200">
+            <label className="block text-sm font-medium text-[var(--dialog-text)]">
               Signature
             </label>
-            <div className="mt-2 rounded-lg border border-zinc-800 bg-zinc-900 p-2">
+            <div className="mt-2 rounded-lg border border-[var(--dialog-input-border)] bg-[var(--dialog-input-bg)] p-2">
               <SignaturePad onSignatureChange={handleSignatureChange} height={180} />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-200">
-              Message <span className="text-zinc-500">(optional)</span>
+            <label className="block text-sm font-medium text-[var(--dialog-text)]">
+              Message <span className="text-[var(--dialog-muted)]">(optional)</span>
             </label>
             <textarea
               rows={4}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-white"
+              className="mt-2 w-full rounded-md border border-[var(--dialog-input-border)] bg-[var(--dialog-input-bg)] px-3 py-2 text-[var(--dialog-text)] placeholder:text-[var(--dialog-muted)]"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-200">
-              Email <span className="text-zinc-500">(optional)</span>
+            <label className="block text-sm font-medium text-[var(--dialog-text)]">
+              Email <span className="text-[var(--dialog-muted)]">(optional)</span>
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-white"
+              className="mt-2 w-full rounded-md border border-[var(--dialog-input-border)] bg-[var(--dialog-input-bg)] px-3 py-2 text-[var(--dialog-text)] placeholder:text-[var(--dialog-muted)]"
               placeholder="you@example.com"
               aria-invalid={Boolean(fieldErrors.email)}
               aria-describedby={fieldErrors.email ? "dialog-email-error" : undefined}
@@ -244,14 +315,14 @@ export function SignWallDialog({
                 {fieldErrors.email}
               </p>
             )}
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-[var(--dialog-muted)]">
               Used for verification badge only.
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-200">
-              Stickers <span className="text-zinc-500">(up to 3)</span>
+            <label className="block text-sm font-medium text-[var(--dialog-text)]">
+              Stickers <span className="text-[var(--dialog-muted)]">(up to 3)</span>
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
               {STICKER_OPTIONS.map((sticker) => (
@@ -261,8 +332,8 @@ export function SignWallDialog({
                   onClick={() => toggleSticker(sticker)}
                   className={`h-12 w-12 rounded-lg border text-2xl transition ${
                     selectedStickers.includes(sticker)
-                      ? "border-white bg-zinc-800"
-                      : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"
+                      ? "border-[var(--dialog-text)] bg-[var(--dialog-input-bg)]"
+                      : "border-[var(--dialog-input-border)] bg-[var(--dialog-input-bg)] hover:opacity-80"
                   }`}
                   aria-pressed={selectedStickers.includes(sticker)}>
                   {sticker}
