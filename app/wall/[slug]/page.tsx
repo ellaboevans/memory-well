@@ -132,7 +132,7 @@ export default function PublicWallPage() {
               {wall.description}
             </p>
           )}
-          <div className="mt-4 flex items-center gap-4">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             {canSign && (
               <Link
                 href={`/wall/${slug}/sign`}
@@ -144,6 +144,15 @@ export default function PublicWallPage() {
                 Sign This Wall ✍️
               </Link>
             )}
+            <Link
+              href={`/wall/${slug}/canvas`}
+              className="inline-flex items-center px-5 py-3 border rounded-md text-sm font-medium transition-opacity hover:opacity-90"
+              style={{
+                borderColor,
+                color: primaryColor,
+              }}>
+              Explore canvas view
+            </Link>
             {!canSign && (
               <div
                 className="text-sm opacity-70"
