@@ -1,7 +1,7 @@
 import { CustomerPortal } from "@polar-sh/nextjs";
 import { NextRequest } from "next/server";
 
-export const GET = CustomerPortal({
+const portalHandler = CustomerPortal({
   accessToken: process.env.POLAR_ACCESS_TOKEN!,
   getCustomerId: async (req: NextRequest) => {
     // Get customer ID from query params (we'll pass it when redirecting)
@@ -10,3 +10,7 @@ export const GET = CustomerPortal({
   },
   server: "sandbox", // Change to "production" when going live
 });
+
+export async function GET(req: NextRequest) {
+  return portalHandler(req);
+}
