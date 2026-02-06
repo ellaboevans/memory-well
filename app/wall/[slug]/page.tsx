@@ -1,37 +1,14 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Id } from "@/convex/_generated/dataModel";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { SignWallDialog } from "@/components/wall/sign-wall-dialog";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-
-// Component to display signature image
-function SignatureImage({ storageId }: { storageId: Id<"_storage"> }) {
-  const url = useQuery(api.entries.getSignatureUrl, { storageId });
-
-  if (!url) {
-    return <div className="mt-3 h-16 bg-zinc-800 rounded animate-pulse" />;
-  }
-
-  return (
-    <div className="mt-3 w-full rounded-lg bg-zinc-800 p-2">
-      <Image
-        src={url}
-        alt="Signature"
-        width={600}
-        height={240}
-        className="h-auto max-h-24 w-full object-contain"
-        unoptimized
-      />
-    </div>
-  );
-}
+import { EntriesList } from "@/components/wall/entries-list";
 
 // Component to display cover image
 function CoverImage({ storageId }: { storageId: Id<"_storage"> }) {
@@ -62,14 +39,17 @@ export default function PublicWallPage() {
   const searchParams = useSearchParams();
 
   const wall = useQuery(api.walls.getBySlug, { slug });
-  const entries = useQuery(
-    api.entries.listByWall,
+  const {
+    results: entries,
+    status: entriesStatus,
+    loadMore,
+  } = usePaginatedQuery(
+    api.entries.listByWallPaginated,
     wall ? { wallId: wall._id } : "skip",
+    { initialNumItems: 8 },
   );
   const [now, setNow] = useState(() => Date.now());
-  const [signDialogOpen, setSignDialogOpen] = useState(false);
-  const reduceMotion = useReducedMotion();
-
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(timer);
@@ -83,21 +63,17 @@ export default function PublicWallPage() {
     wall?.acceptingEntries && !windowNotStarted && !windowClosed,
   );
 
-  useEffect(() => {
-    if (!canSign) return;
-    if (searchParams.get("sign") === "1") {
-      setSignDialogOpen(true);
-    }
-  }, [canSign, searchParams]);
+  const queryWantsOpen = canSign && searchParams.get("sign") === "1";
+  const signDialogOpen = queryWantsOpen || manualDialogOpen;
 
   const handleOpenSignDialog = () => {
     if (!canSign) return;
-    setSignDialogOpen(true);
+    setManualDialogOpen(true);
     router.replace(`/wall/${slug}?sign=1`, { scroll: false });
   };
 
   const handleSignDialogChange = (open: boolean) => {
-    setSignDialogOpen(open);
+    setManualDialogOpen(open);
     if (!open && searchParams.get("sign") === "1") {
       router.replace(`/wall/${slug}`, { scroll: false });
     }
@@ -201,120 +177,48 @@ export default function PublicWallPage() {
 
       {/* Entries grid */}
       <main className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {entries === undefined ? (
-          <div style={{ color: primaryColor }} className="opacity-60">
-            Loading signatures...
-          </div>
-        ) : entries.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">📝</div>
-            <h2
-              className="text-xl font-semibold mb-2"
-              style={{ color: primaryColor }}>
-              No signatures yet
-            </h2>
-            <p className="mb-6 opacity-60" style={{ color: primaryColor }}>
-              Be the first to sign this memory wall!
-            </p>
-            {wall.acceptingEntries && (
-              <Link
-                href={`/wall/${slug}/sign`}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm transition-opacity hover:opacity-90"
-                style={{
-                  backgroundColor: primaryColor,
-                  color: buttonTextColor,
-                }}>
-                Add your signature
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
+        <div className="space-y-4">
+          {wall && (
             <p className="text-sm opacity-50" style={{ color: primaryColor }}>
               {entries.length} signature{entries.length === 1 ? "" : "s"}
             </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <AnimatePresence mode="popLayout">
-                {entries.map((entry, index) => (
-                  <motion.div
-                    key={entry._id}
-                    layout
-                    initial={
-                      reduceMotion
-                        ? false
-                        : { opacity: 0, y: 12, scale: 0.98 }
-                    }
-                    animate={
-                      reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }
-                    }
-                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
-                    transition={{ duration: 0.25, delay: index * 0.02 }}
-                    className="rounded-lg p-4"
-                    style={{
-                      backgroundColor: cardBgColor,
-                      borderColor,
-                      borderWidth: 1,
-                    }}>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3
-                          className="font-medium"
-                          style={{ color: primaryColor }}>
-                          {entry.name}
-                        </h3>
-                      </div>
-                      {entry.isVerified && (
-                        <span
-                          className="inline-flex items-center rounded-full bg-blue-600/20 p-1.5 text-blue-300"
-                          aria-label="Verified">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            className="h-6 w-6 fill-current">
-                            <path d="M12 2l1.8 2.3 2.9-.3.7 2.8 2.8.7-.3 2.9L22 12l-2.3 1.8.3 2.9-2.8.7-.7 2.8-2.9-.3L12 22l-1.8-2.3-2.9.3-.7-2.8-2.8-.7.3-2.9L2 12l2.3-1.8-.3-2.9 2.8-.7.7-2.8 2.9.3L12 2z" />
-                            <path
-                              className="text-blue-50"
-                              d="M10.2 13.6l-1.8-1.8-1.2 1.2 3 3 6-6-1.2-1.2-4.8 4.8z"
-                              fill="currentColor"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                    </div>
-                    {entry.signatureImageId && (
-                      <SignatureImage storageId={entry.signatureImageId} />
-                    )}
-                    {entry.message && (
-                      <p
-                        className="mt-3 text-sm whitespace-pre-wrap opacity-80"
-                        style={{ color: primaryColor }}>
-                        {entry.message}
-                      </p>
-                    )}
-                    {entry.stickers && entry.stickers.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {entry.stickers.map((sticker, i) => (
-                          <span key={i + 1} className="text-lg">
-                            {sticker}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <p
-                      className="mt-3 text-xs opacity-40"
+          )}
+          <EntriesList
+            entries={entries}
+            primaryColor={primaryColor}
+            borderColor={borderColor}
+            cardBgColor={cardBgColor}
+            status={entriesStatus}
+            onLoadMore={loadMore}
+            onEmpty={
+              wall.acceptingEntries ? (
+                <div className="space-y-4">
+                  <div className="text-6xl">📝</div>
+                  <div>
+                    <h2
+                      className="text-xl font-semibold mb-2"
                       style={{ color: primaryColor }}>
-                      {new Date(entry._creationTime).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      No signatures yet
+                    </h2>
+                    <p className="opacity-60" style={{ color: primaryColor }}>
+                      Be the first to sign this memory wall!
                     </p>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
-        )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenSignDialog}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm transition-opacity hover:opacity-90"
+                    style={{
+                      backgroundColor: primaryColor,
+                      color: buttonTextColor,
+                    }}>
+                    Add your signature
+                  </button>
+                </div>
+              ) : null
+            }
+          />
+        </div>
       </main>
 
       {wall && (

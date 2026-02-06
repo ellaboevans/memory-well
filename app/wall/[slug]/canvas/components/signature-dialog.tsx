@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { BadgeCheck } from "lucide-react";
 import { format } from "date-fns";
 import Image from "next/image";
 import { forwardRef, useImperativeHandle, useState } from "react";
@@ -66,7 +67,10 @@ export function SignatureDialog({ signature, onClose }: SignatureDialogProps) {
           <DialogTitle className="flex items-center gap-2">
             {signature.name}
             {signature.isVerified && (
-              <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-200">
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-200"
+                aria-label="Verified">
+                <BadgeCheck className="h-3.5 w-3.5" />
                 Verified
               </span>
             )}

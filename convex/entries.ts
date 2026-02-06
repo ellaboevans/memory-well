@@ -3,6 +3,7 @@ import { v, ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { rateLimiter } from "./rateLimiter";
 import { internal } from "./_generated/api";
+import { paginationOptsValidator } from "convex/server";
 
 // Entry validator for return types
 const entryValidator = v.object({
@@ -49,6 +50,50 @@ export const listByWall = query({
     }
 
     return entries.filter((entry) => !entry.isHidden);
+  },
+});
+
+/**
+ * Paginated list of entries for a wall (public, excludes hidden for non-owners)
+ */
+export const listByWallPaginated = query({
+  args: {
+    wallId: v.id("walls"),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: v.object({
+    page: v.array(entryValidator),
+    isDone: v.boolean(),
+    continueCursor: v.string(),
+    splitCursor: v.optional(v.union(v.string(), v.null())),
+    pageStatus: v.optional(v.union(v.null(), v.string())),
+  }),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    const wall = await ctx.db.get(args.wallId);
+
+    if (!wall) {
+      return { page: [], isDone: true, continueCursor: "" };
+    }
+
+    const isOwner = userId && wall.ownerId === userId;
+    let entriesQuery = ctx.db
+      .query("entries")
+      .withIndex("by_wall_created", (q) => q.eq("wallId", args.wallId))
+      .order("desc");
+
+    if (!isOwner) {
+      entriesQuery = entriesQuery.filter((q) =>
+        q.eq(q.field("isHidden"), false),
+      );
+    }
+
+    const results = await entriesQuery.paginate(args.paginationOpts);
+
+    return {
+      ...results,
+      page: results.page,
+    };
   },
 });
 
