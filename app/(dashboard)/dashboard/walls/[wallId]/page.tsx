@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { usePaginatedQuery, useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { getWallDisplayUrl, getWallUrl } from "@/lib/config";
 import { useParams, useRouter } from "next/navigation";
@@ -16,6 +16,7 @@ import {
   Eye,
   EyeOff,
   Trash2,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   ChartContainer,
@@ -51,6 +52,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import QRCode from "qrcode";
 import Image from "next/image";
 
@@ -62,9 +69,14 @@ export default function WallDetailPage() {
   const wall = useQuery(api.walls.get, { wallId });
   const profile = useQuery(api.profiles.me);
   const isPremium = profile?.tier === "premium";
-  const entries = useQuery(
-    api.entries.listByWall,
+  const {
+    results: entries,
+    status: entriesStatus,
+    loadMore,
+  } = usePaginatedQuery(
+    api.entries.listByWallPaginated,
     wall ? { wallId: wall._id } : "skip",
+    { initialNumItems: 20 },
   );
   const entryCount = useQuery(
     api.entries.countByWall,
@@ -222,18 +234,16 @@ export default function WallDetailPage() {
   }
 
   const renderEntries = () => {
-    if (entries === undefined) {
+    if (entriesStatus === "LoadingFirstPage") {
       return (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 animate-pulse">
-              <div className="h-4 w-1/3 bg-zinc-800 rounded" />
-              <div className="h-3 w-2/3 bg-zinc-800 rounded mt-3" />
-              <div className="h-3 w-1/4 bg-zinc-800 rounded mt-3" />
-            </div>
-          ))}
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 animate-pulse">
+          <div className="h-4 w-40 rounded bg-zinc-800" />
+          <div className="mt-4 h-3 w-64 rounded bg-zinc-800" />
+          <div className="mt-6 space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-3 w-full rounded bg-zinc-800" />
+            ))}
+          </div>
         </div>
       );
     }
@@ -254,151 +264,162 @@ export default function WallDetailPage() {
 
     return (
       <div className="space-y-4">
-        {entries.map((entry) => (
-          <div
-            key={entry._id}
-            className={`bg-zinc-900 border rounded-lg p-4 ${
-              entry.isHidden ? "border-zinc-700 opacity-60" : "border-zinc-800"
-            }`}>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-white">{entry.name}</h3>
-                  {entry.isVerified && (
-                    <span
-                      className="inline-flex items-center rounded-full bg-blue-600/20 p-1.5 text-blue-300"
-                      aria-label="Verified">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        className="h-6 w-6 fill-current">
-                        <path d="M12 2l1.8 2.3 2.9-.3.7 2.8 2.8.7-.3 2.9L22 12l-2.3 1.8.3 2.9-2.8.7-.7 2.8-2.9-.3L12 22l-1.8-2.3-2.9.3-.7-2.8-2.8-.7.3-2.9L2 12l2.3-1.8-.3-2.9 2.8-.7.7-2.8 2.9.3L12 2z" />
-                        <path
-                          className="text-blue-50"
-                          d="M10.2 13.6l-1.8-1.8-1.2 1.2 3 3 6-6-1.2-1.2-4.8 4.8z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                    </span>
-                  )}
-                  {entry.isHidden && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-700 text-zinc-400">
-                      Hidden
-                    </span>
-                  )}
-                </div>
-                {entry.message && (
-                  <p className="mt-2 text-zinc-300 text-sm whitespace-pre-wrap">
-                    {entry.message}
-                  </p>
-                )}
-                {entry.stickers && entry.stickers.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {entry.stickers.map((sticker) => (
-                      <span key={sticker} className="text-lg">
-                        {sticker}
+        <div className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="border-b border-zinc-800 bg-zinc-950/70 text-zinc-400">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium">Name</th>
+                  <th className="px-4 py-3 text-left font-medium">Message</th>
+                  <th className="px-4 py-3 text-left font-medium">Stickers</th>
+                  <th className="px-4 py-3 text-left font-medium">Date</th>
+                  <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800">
+                {entries.map((entry) => (
+                  <tr
+                    key={entry._id}
+                    className={entry.isHidden ? "opacity-60" : undefined}>
+                    <td className="px-4 py-3 text-white">{entry.name}</td>
+                    <td className="px-4 py-3 text-zinc-300">
+                      <span className="line-clamp-2">
+                        {entry.message || "—"}
                       </span>
-                    ))}
-                  </div>
-                )}
-                <p className="mt-2 text-xs text-zinc-600">
-                  {new Date(entry._creationTime).toLocaleString()}
-                </p>
-              </div>
-
-              {/* Actions */}
-              <TooltipProvider>
-                <div className="flex gap-2 ml-4">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={async () => {
-                          setActionError(null);
-                          if (!isPremium) {
-                            setActionError(
-                              "Verification badges require Premium.",
-                            );
-                            return;
-                          }
-                          try {
-                            await toggleVerified({ entryId: entry._id });
-                          } catch (err) {
-                            setActionError(
-                              err instanceof Error
-                                ? err.message
-                                : "Failed to update verification",
-                            );
-                          }
-                        }}
-                        className="p-2 text-zinc-400 hover:text-blue-400 transition-colors"
-                        aria-label={
-                          entry.isVerified
-                            ? "Remove verification"
-                            : "Mark as verified"
-                        }
-                        aria-pressed={entry.isVerified}>
-                        <BadgeCheck
-                          className={`h-5 w-5 ${
-                            entry.isVerified ? "text-blue-400" : ""
-                          }`}
-                        />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {!isPremium
-                        ? "Upgrade to use verification"
-                        : entry.isVerified
-                          ? "Remove verification"
-                          : "Mark as verified"}
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={async () => {
-                          setActionError(null);
-                          try {
-                            await toggleHidden({ entryId: entry._id });
-                          } catch (err) {
-                            setActionError(
-                              err instanceof Error
-                                ? err.message
-                                : "Failed to update visibility",
-                            );
-                          }
-                        }}
-                        className="p-2 text-zinc-400 hover:text-white transition-colors"
-                        aria-label={
-                          entry.isHidden ? "Show entry" : "Hide entry"
-                        }
-                        aria-pressed={entry.isHidden}>
-                        {entry.isHidden ? (
-                          <Eye className="h-5 w-5" />
-                        ) : (
-                          <EyeOff className="h-5 w-5" />
+                    </td>
+                    <td className="px-4 py-3 text-lg">
+                      {entry.stickers && entry.stickers.length > 0
+                        ? entry.stickers.join(" ")
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-400">
+                      {new Date(entry._creationTime).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {entry.isVerified && (
+                          <span className="inline-flex items-center rounded-full bg-blue-600/20 px-2 py-0.5 text-blue-300">
+                            Verified
+                          </span>
                         )}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {entry.isHidden ? "Show entry" : "Hide entry"}
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => setDeletingEntryId(entry._id)}
-                        className="p-2 text-zinc-400 hover:text-red-400 transition-colors"
-                        aria-label="Delete entry">
-                        <Trash2 className="h-5 w-5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>Delete entry</TooltipContent>
-                  </Tooltip>
-                </div>
-              </TooltipProvider>
-            </div>
+                        {entry.isHidden && (
+                          <span className="inline-flex items-center rounded-full bg-zinc-700 px-2 py-0.5 text-zinc-300">
+                            Hidden
+                          </span>
+                        )}
+                        {!entry.isVerified && !entry.isHidden && (
+                          <span className="text-zinc-500">—</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="rounded-md border border-zinc-800 p-2 text-zinc-400 hover:text-white transition-colors"
+                              aria-label="Entry actions">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="bg-zinc-900 w-45 border-zinc-800 text-white">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <DropdownMenuItem
+                                      onClick={async () => {
+                                        setActionError(null);
+                                        if (!isPremium) {
+                                          setActionError(
+                                            "Verification badges require Premium.",
+                                          );
+                                          return;
+                                        }
+                                        try {
+                                          await toggleVerified({
+                                            entryId: entry._id,
+                                          });
+                                        } catch (err) {
+                                          setActionError(
+                                            err instanceof Error
+                                              ? err.message
+                                              : "Failed to update verification",
+                                          );
+                                        }
+                                      }}
+                                      disabled={!isPremium}
+                                      className="gap-2">
+                                      <BadgeCheck className="h-4 w-4" />
+                                      {entry.isVerified
+                                        ? "Unverify entry"
+                                        : "Verify entry"}
+                                    </DropdownMenuItem>
+                                  </span>
+                                </TooltipTrigger>
+                                {!isPremium && (
+                                  <TooltipContent>
+                                    Upgrade to use verification
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                setActionError(null);
+                                try {
+                                  await toggleHidden({
+                                    entryId: entry._id,
+                                  });
+                                } catch (err) {
+                                  setActionError(
+                                    err instanceof Error
+                                      ? err.message
+                                      : "Failed to update visibility",
+                                  );
+                                }
+                              }}
+                              className="gap-2">
+                              {entry.isHidden ? (
+                                <Eye className="h-4 w-4" />
+                              ) : (
+                                <EyeOff className="h-4 w-4" />
+                              )}
+                              {entry.isHidden ? "Show entry" : "Hide entry"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setDeletingEntryId(entry._id)}
+                              variant="destructive"
+                              className="gap-2">
+                              <Trash2 className="h-4 w-4" />
+                              Delete entry
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
+        </div>
+        <div className="flex items-center justify-between text-xs text-zinc-500">
+          <span>
+            Showing {entries.length} of {entryCount ?? entries.length}{" "}
+            signatures
+          </span>
+          <Button
+            variant="outline"
+            className="border-zinc-700"
+            disabled={entriesStatus !== "CanLoadMore"}
+            onClick={() => loadMore(20)}>
+            {entriesStatus === "LoadingMore" ? "Loading..." : "Load more"}
+          </Button>
+        </div>
       </div>
     );
   };
@@ -990,7 +1011,7 @@ export default function WallDetailPage() {
               undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 sm:gap-2">
             <Button
               type="button"
               variant="outline"
