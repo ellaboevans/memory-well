@@ -1,6 +1,6 @@
 # Memory Well - Development Progress
 
-Last Updated: February 5, 2026
+Last Updated: February 6, 2026
 
 ---
 
@@ -70,6 +70,8 @@ Last Updated: February 5, 2026
   - [x] Data URL export
 - [x] Entry submission (name, message, signature)
 - [x] Entries display on wall page
+- [x] Paginated entries + infinite scrolling
+- [x] Entry card/list components (decoupled)
 - [x] Entry timestamps
 - [x] Stickers/emojis (up to 3)
 
@@ -77,7 +79,7 @@ Last Updated: February 5, 2026
 
 - [x] Hide entry (soft delete / toggle visibility)
 - [x] Delete entry (permanent)
-- [x] Verify entry (badge)
+- [x] Verify entry (badge shown in canvas dialog)
 - [x] Hidden entries shown to owner only
 
 ### Export
